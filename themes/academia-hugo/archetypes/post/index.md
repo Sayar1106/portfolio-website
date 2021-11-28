@@ -7,8 +7,8 @@ summary: ""
 authors: []
 tags: []
 categories: []
-date: {{ .Date }}
-lastmod: {{ .Date }}
+date: ""
+lastmod: ""
 featured: false
 draft: false
 
