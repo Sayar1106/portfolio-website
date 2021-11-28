@@ -1,0 +1,295 @@
+<!doctype html><html lang=en-us>
+<head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<meta name=generator content="Source Themes Academia 4.3.1">
+<meta name=generator content="Hugo 0.88.1">
+<meta name=author content="Sayar Banerjee">
+<meta name=description content="Seemlessly deploy your Machine Learning APIs">
+<link rel=alternate hreflang=en-us href=https://examplesite.org/post/fastapi-saturncloud/>
+<meta name=theme-color content="#fc6f5c">
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.6/css/academicons.min.css integrity="sha256-uFVgMKfistnJAfoCUQigIl+JfUaP47GrRKjf6CTPVmw=" crossorigin=anonymous>
+<link rel=stylesheet href=https://use.fontawesome.com/releases/v5.6.0/css/all.css integrity=sha384-aOkxzJ5uQz7WBObEZcHvV5JvRW3TUc2rNPA7pe3AwnsUohiw1Vj2Rgx2KSOkF5+h crossorigin=anonymous>
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css integrity="sha256-ygkqlh3CYSUri3LhQxzdcm0n1EQvH2Y+U5S2idbLtxs=" crossorigin=anonymous>
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css crossorigin=anonymous title=hl-light>
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/dracula.min.css crossorigin=anonymous title=hl-dark disabled>
+<link rel=stylesheet href="https://fonts.googleapis.com/css?family=Lato:400,700|Open+Sans|Roboto+Mono&display=swap">
+<link rel=stylesheet href=/css/academia.min.76e69f7370e1e1222344c0109d841c44.css>
+<link rel=manifest href=/site.webmanifest>
+<link rel=icon type=image/png href=/img/icon.png>
+<link rel=apple-touch-icon type=image/png href=/img/icon-192.png>
+<link rel=canonical href=https://examplesite.org/post/fastapi-saturncloud/>
+<meta property="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="Portfolio">
+<meta property="og:url" content="https://examplesite.org/post/fastapi-saturncloud/">
+<meta property="og:title" content="Hosting FastAPI with Saturn Cloud Deployments | Portfolio">
+<meta property="og:description" content="Seemlessly deploy your Machine Learning APIs"><meta property="og:image" content="https://examplesite.org/post/fastapi-saturncloud/featured.jpeg">
+<meta property="twitter:image" content="https://examplesite.org/post/fastapi-saturncloud/featured.jpeg"><meta property="og:locale" content="en-us">
+<meta property="article:published_time" content="2021-11-19T00:00:00+00:00">
+<meta property="article:modified_time" content="2021-11-19T00:00:00+00:00">
+<title>Hosting FastAPI with Saturn Cloud Deployments | Portfolio</title>
+</head>
+<body id=top data-spy=scroll data-target=#TableOfContents data-offset=71>
+<aside class=search-results id=search>
+<div class=container>
+<section class=search-header>
+<div class="row no-gutters justify-content-between mb-3">
+<div class=col-6>
+<h1>Search</h1>
+</div>
+<div class="col-6 col-search-close">
+<a class=js-search href=#><i class="fas fa-times-circle text-muted" aria-hidden=true></i></a>
+</div>
+</div>
+<div id=search-box>
+</div>
+</section>
+<section class=section-search-results>
+<div id=search-hits>
+</div>
+</section>
+</div>
+</aside>
+<nav class="navbar navbar-light fixed-top navbar-expand-lg py-0" id=navbar-main>
+<div class=container>
+<a class=navbar-brand href=/>Portfolio</a>
+<button type=button class=navbar-toggler data-toggle=collapse data-target=#navbar aria-controls=navbar aria-expanded=false aria-label="Toggle navigation"><span><i class="fas fa-bars"></i></span>
+</button>
+<div class="collapse navbar-collapse" id=navbar>
+<ul class="navbar-nav ml-auto">
+<li class=nav-item>
+<a class=nav-link href=/#about><span>Home</span></a>
+</li>
+<li class=nav-item>
+<a class=nav-link href=/#posts><span>Posts</span></a>
+</li>
+<li class=nav-item>
+<a class=nav-link href=/#projects><span>Projects</span></a>
+</li>
+<li class=nav-item>
+<a class=nav-link href=/#contact><span>Contact</span></a>
+</li>
+<li class=nav-item>
+<a class="nav-link js-dark-toggle" href=#><i class="fas fa-moon" aria-hidden=true></i></a>
+</li>
+</ul>
+</div>
+</div>
+</nav>
+<article class="article py-5" itemscope itemtype=http://schema.org/Article>
+<div class="container split-header">
+<div class="row justify-content-center">
+<div class=col-lg-8>
+<img class="img-fluid w-100" src=/post/fastapi-saturncloud/featured_hu2d03217514f9359addf5892081d78488_475021_680x500_fill_q90_lanczos_smart1.jpeg itemprop=image alt>
+<span class=article-header-caption>Image credit: <a href=https://unsplash.com/@writecodenow><strong>Boitumelo Phetla</strong></a></span>
+</div>
+<div class=col-lg-8>
+<h1 itemprop=name>Hosting FastAPI with Saturn Cloud Deployments</h1>
+<p class=page-subtitle>Seemlessly deploy your Machine Learning APIs</p>
+<meta content="2021-11-19 00:00:00 +0000 UTC" itemprop=datePublished>
+<meta content="2021-11-19 00:00:00 +0000 UTC" itemprop=dateModified>
+<div class=article-metadata>
+<div>
+<span itemprop="author name" itemtype=http://schema.org/Person><a href=/authors/admin/>Sayar Banerjee</a></span>
+</div>
+<span class=article-date>
+<time>Nov 19, 2021</time>
+</span>
+<span class=middot-divider></span>
+<span class=article-reading-time>
+6 min read
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class=article-container>
+<div class=article-style itemprop=articleBody>
+<hr>
+<p>Hi all, this article will explore the process of deploying a FastAPI application on Saturn Cloud. FastAPI is a robust web framework for building APIs with the Python language. <a href="https://saturncloud.io?utm_source=Sayar+Medium&utm_medium=FastAPI+Blog&utm_campaign=FastAPI+Blog">Saturn Cloud</a> is a platform dedicated to scaling Machine Learning and Big Data pipelines and more.</p>
+<p>The model will predict median house prices in California. Let&rsquo;s jump right into it.</p>
+<h3 id=resources>Resources</h3>
+<p>👉 <a href=https://github.com/Sayar1106/cali-house-prices-estimator>Repository</a></p>
+<p>👉 <a href=https://fastapi.tiangolo.com/>FastAPI</a></p>
+<p>👉 <a href=https://scikit-learn.org/stable/>Scikit-learn</a></p>
+<p>👉 <a href=https://joblib.readthedocs.io/en/latest/>Joblib</a></p>
+<hr>
+<h3 id=data-exploration>Data Exploration</h3>
+<p>The dataset I will use for training our machine learning model is called &ldquo;California Housing Prices.&rdquo; It can be found <a href=https://www.kaggle.com/camnugent/california-housing-prices>here</a>.</p>
+<p>The contents of our data are as follows:</p>
+<p>The data pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. Be warned, the data isn&rsquo;t clean, so there are some preprocessing steps required! The columns are as follows, and their names are pretty self-explanatory:</p>
+<ul>
+<li>longitude</li>
+<li>latitude</li>
+<li>housing_median_age</li>
+<li>total_rooms</li>
+<li>total_bedrooms</li>
+<li>population</li>
+<li>households</li>
+<li>median_income</li>
+<li>median_house_ value</li>
+<li>ocean_proximity</li>
+</ul>
+<p>On doing a rudimentary exploration of the dataset, I found the following:</p>
+<p><img src=/posts_img/fastapi_saturn/img_1.png alt></p>
+<p>A correlation plot between all the numerical features shows us the following:</p>
+<p><img src=/posts_img/fastapi_saturn/img_2.png alt></p>
+<p>According to the graph, most numerical features have very little correlation with median_house_value except median_income, which seems to have a strong positive correlation of around 0.68.</p>
+<hr>
+<h3 id=data-cleaningfeature-engineering>Data Cleaning/Feature Engineering</h3>
+<p>Since the total_bedrooms feature had missing values, I had to impute it. For simplicity, I chose the median as the metric to impute the feature.</p>
+<p>Additionally, two new features were engineered, namely, &ldquo;rooms_per_households&rdquo; and &ldquo;population_per_household.&rdquo;</p>
+<p><img src=/posts_img/fastapi_saturn/img_3.png alt></p>
+<hr>
+<h3 id=training-themodel>Training the Model</h3>
+<p>Our repository looks like this:</p>
+<p><img src=/posts_img/fastapi_saturn/img_4.png alt></p>
+<p>The requirements.txt file contains our dependencies. It is crucial to have all the dependencies added to this file as it will be used during our deployment.</p>
+<p><img src=/posts_img/fastapi_saturn/img_5.png alt></p>
+<p>The file src/main.py contains our training script. Let us take a look at some of the essential functions in the script.</p>
+<p>Our training model pipeline is relatively standard. There is just one categorical column (ocean_proximity). For the other numerical columns, I applied a standard scaler. The ColumnTransformer estimator helps to facilitate feature transformations on heterogeneous data.</p>
+<p>As for the model, I chose the Random Forest algorithm. I created the pipeline using scikit-learn&rsquo;s Pipeline class.</p>
+<p><img src=/posts_img/fastapi_saturn/img_6.png alt></p>
+<p>I used joblib to save our model. Since the model file was quite large (>100Mb), I decided to store it in AWS S3. The model&rsquo;s R² score was around 0.81, and the RMSE was around 49k.</p>
+<hr>
+<h3 id=setting-up-fastapi-server-andfrontend>Setting up FastAPI Server and Frontend</h3>
+<p>As you may have guessed, app/main.py contains our code for the server. Since the model is stored in AWS, I used boto3 to download a local copy to the server.</p>
+<p>If your bucket and file are private, you may need to set up authentication to access it on Saturn Cloud. You can do it by following this <a href=https://saturncloud.io/docs/using-saturn-cloud/connect_data/>guide</a>.</p>
+<p>I wrote a simple function to load our model from AWS:</p>
+<p><img src=/posts_img/fastapi_saturn/img_7.png alt></p>
+<p>The variables BUCKET_NAME and FILE_NAME are self-explanatory. LOCAL_PATH is the path to where the model will be copied locally.</p>
+<p>I also defined global variables for the app, model, and templates.</p>
+<p><img src=/posts_img/fastapi_saturn/img_8.png alt></p>
+<h4 id=homepage>Homepage</h4>
+<p>Since I&rsquo;m creating an application, it&rsquo;s essential to have a homepage to serve as an interface for the model server.</p>
+<p>I created a homepage for the app so that users can enter values for each of the features. To render the page, I used Jinja2Templates, which is provided out of the box by FastAPI templates.TemplateResponse renders our landing page titled &ldquo;index.html.&rdquo;</p>
+<p><img src=/posts_img/fastapi_saturn/img_9.png alt></p>
+<p>index.html contains a form that will serve as the frontend for our application. The body of the page looks like this:</p>
+<p><img src=/posts_img/fastapi_saturn/img_10.png alt></p>
+<p>If you look closely at the form tag, you will see that the action attribute is set to &ldquo;/submitform&rdquo; and the request method is a POST request.</p>
+<p><img src=/posts_img/fastapi_saturn/img_11.png alt></p>
+<p>Our FastAPI server needs to have a method that handles the form data. This method needs to be decorated by app.post("/submitform") to handle the request appropriately.</p>
+<p><img src=/posts_img/fastapi_saturn/img_12.png alt></p>
+<p>You will notice that each of the variables is set as form parameters using Form. This class tells FastAPI that each variable&rsquo;s input is being received from a form.</p>
+<p>You will also notice that line 26 has a method called predict. This method is actually where the model pipeline is fed the input from the form using the appropriate format. Since the pipeline can only receive input from a data frame, I first convert the data into a data frame. I then created the features as part of the feature engineering process. Finally, I return the model&rsquo;s predictions.</p>
+<p><img src=/posts_img/fastapi_saturn/img_13.png alt></p>
+<p>Once I had the price prediction, I used templates.TemplateResponse again to return a page called result.html. Along with &ldquo;request&rdquo;, I also passed &ldquo;price&rdquo; through the TemplateResponse method. Finally, I rendered the price on the body of result.html.</p>
+<p><img src=/posts_img/fastapi_saturn/img_14.png alt></p>
+<hr>
+<h3 id=deploying-to-saturncloud>Deploying to Saturn Cloud</h3>
+<p>Before setting up the deployment, I pushed all of the code to Github. To deploy it, you must have your repository connected to Saturn Cloud. To do so, you can follow this <a href=https://saturncloud.io/docs/using-saturn-cloud/gitrepo/>guide</a>.</p>
+<p>Once your repo is connected, head over to resources and select &ldquo;New Deployment&rdquo;.</p>
+<p><img src=/posts_img/fastapi_saturn/img_15.png alt></p>
+<p>After this, you will be greeted with a form:</p>
+<p><img src=/posts_img/fastapi_saturn/img_16.png alt></p>
+<p>There are a few things to note when filling out the form. For instance, the &ldquo;Command&rdquo; is what the deployment will run to start your application.</p>
+<p><img src=/posts_img/fastapi_saturn/img_17.png alt></p>
+<p>Note that Saturn Cloud requires your applications to listen using port 8000.</p>
+<p>Also, note the Extra Packages header. This is the script that will be used to install additional packages before the command is run. Since Saturn Cloud&rsquo;s default image does not have certain libraries like FastAPI and Uvicorn, pass &ldquo;-r requirements.txt&rdquo; to the text box.</p>
+<p>This ensures that the script &ldquo;`pip install -r requirements.txt` &ldquo;is run before startup, containing dependencies for the additional packages.</p>
+<p>Note that you can also write the individual names of each package in this section to install them.</p>
+<p>Once you hit the Create button, your deployment will be created. Click on it and add your Github repo to the deployment. Ensure that you add the path to the Github resource to your working directory. Once that is done, click the green arrow to start the deployment.</p>
+<p><img src=/posts_img/fastapi_saturn/img_18.png alt></p>
+<p>Once your deployment is ready, click on the public URL. You should see a page like this:</p>
+<p><img src=/posts_img/fastapi_saturn/img_19.png alt></p>
+<p>Once you fill out the form, you will see a page with the predicted price:</p>
+<p><img src=/posts_img/fastapi_saturn/img_20.png alt></p>
+<p>Note that I used the last example of my test set as input. The actual median house price was $133000, so the model did a reasonably good job! 😀</p>
+<p><strong>👉</strong> <a href=https://github.com/Sayar1106/cali-house-prices-estimator><strong>Link to the Github directory</strong></a></p>
+<hr>
+<h3 id=conclusion>Conclusion</h3>
+<p>Congratulations! You have successfully learned how to deploy a FastAPI model on <a href="https://saturncloud.io?utm_source=Sayar+Medium&utm_medium=FastAPI+Blog&utm_campaign=FastAPI+Blog">Saturn Cloud</a>! If you&rsquo;re curious about using their environment, they offer 30 free hours a month for data scientists and teams. I hope you enjoyed reading this article. Until next time! ✋</p>
+</div>
+<div class=article-tags>
+<a class="badge badge-light" href=/tags/cloud/>cloud</a>
+</div>
+<div class="media author-card" itemscope itemtype=http://schema.org/Person>
+<div class=media-body>
+<h5 class=card-title itemprop=name><a href=https://examplesite.org>Sayar Banerjee</a></h5>
+<h6 class=card-subtitle>Analyst</h6>
+<p class=card-text itemprop=description>My research interests include Deep Learning, NLP, Computer Vision</p>
+<ul class=network-icon aria-hidden=true>
+<li>
+<a itemprop=sameAs href=/#contact>
+<i class="fas fa-envelope"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://twitter.com/sayar_banner target=_blank rel=noopener>
+<i class="fab fa-twitter"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://medium.com/@sayarbanerjee target=_blank rel=noopener>
+<i class="fab fa-medium"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://github.com/Sayar1106 target=_blank rel=noopener>
+<i class="fab fa-github"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://www.linkedin.com/in/sayarbanerjee/ target=_blank rel=noopener>
+<i class="fab fa-linkedin"></i>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</article>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js integrity="sha256-X5PoE3KU5l+JcX+w09p/wHl9AzK333C4hJ2I9S5mD4M=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js integrity="sha256-aYTdUrn6Ow1DDgh5JTc3aDGnnju48y/1c8s1dgkYPQ8=" crossorigin=anonymous></script>
+<script>hljs.initHighlightingOnLoad()</script>
+<script src=/js/academia.min.e40e230d9b3dfeac86994156b6388764.js></script>
+<div class=container>
+<footer class=site-footer>
+<div class=container>
+<div class="row align-items-center">
+<div class="col-md-6 mb-4 mb-md-0">
+<p class=mb-0>
+Copyright © 2021 &#183;
+Powered by
+<a href=https://gethugothemes.com target=_blank rel=noopener>Gethugothemes</a>
+</p>
+</div>
+<div class=col-md-6>
+<ul class="list-inline network-icon text-right mb-0">
+</ul>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div id=modal class="modal fade" role=dialog>
+<div class=modal-dialog>
+<div class=modal-content>
+<div class=modal-header>
+<h5 class=modal-title>Cite</h5>
+<button type=button class=close data-dismiss=modal aria-label=Close>
+<span aria-hidden=true>&#215;</span>
+</button>
+</div>
+<div class=modal-body>
+<pre><code class="tex hljs"></code></pre>
+</div>
+<div class=modal-footer>
+<a class="btn btn-outline-primary my-1 js-copy-cite" href=# target=_blank>
+<i class="fas fa-copy"></i> Copy
+</a>
+<a class="btn btn-outline-primary my-1 js-download-cite" href=# target=_blank>
+<i class="fas fa-download"></i> Download
+</a>
+<div id=modal-error></div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

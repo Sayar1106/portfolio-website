@@ -1,0 +1,409 @@
+<!doctype html><html lang=en-us>
+<head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<meta name=generator content="Source Themes Academia 4.3.1">
+<meta name=generator content="Hugo 0.88.1">
+<meta name=author content="Sayar Banerjee">
+<meta name=description content="NumPy is all you need">
+<link rel=alternate hreflang=en-us href=https://examplesite.org/post/k-means-from-scratch/>
+<meta name=theme-color content="#fc6f5c">
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.6/css/academicons.min.css integrity="sha256-uFVgMKfistnJAfoCUQigIl+JfUaP47GrRKjf6CTPVmw=" crossorigin=anonymous>
+<link rel=stylesheet href=https://use.fontawesome.com/releases/v5.6.0/css/all.css integrity=sha384-aOkxzJ5uQz7WBObEZcHvV5JvRW3TUc2rNPA7pe3AwnsUohiw1Vj2Rgx2KSOkF5+h crossorigin=anonymous>
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css integrity="sha256-ygkqlh3CYSUri3LhQxzdcm0n1EQvH2Y+U5S2idbLtxs=" crossorigin=anonymous>
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/github.min.css crossorigin=anonymous title=hl-light>
+<link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/dracula.min.css crossorigin=anonymous title=hl-dark disabled>
+<link rel=stylesheet href="https://fonts.googleapis.com/css?family=Lato:400,700|Open+Sans|Roboto+Mono&display=swap">
+<link rel=stylesheet href=/css/academia.min.76e69f7370e1e1222344c0109d841c44.css>
+<link rel=manifest href=/site.webmanifest>
+<link rel=icon type=image/png href=/img/icon.png>
+<link rel=apple-touch-icon type=image/png href=/img/icon-192.png>
+<link rel=canonical href=https://examplesite.org/post/k-means-from-scratch/>
+<meta property="twitter:card" content="summary_large_image">
+<meta property="og:site_name" content="Portfolio">
+<meta property="og:url" content="https://examplesite.org/post/k-means-from-scratch/">
+<meta property="og:title" content="K-means Clustering from Scratch | Portfolio">
+<meta property="og:description" content="NumPy is all you need"><meta property="og:image" content="https://examplesite.org/post/k-means-from-scratch/featured.jpeg">
+<meta property="twitter:image" content="https://examplesite.org/post/k-means-from-scratch/featured.jpeg"><meta property="og:locale" content="en-us">
+<meta property="article:published_time" content="2020-07-03T00:00:00+00:00">
+<meta property="article:modified_time" content="2020-07-03T00:00:00+00:00">
+<title>K-means Clustering from Scratch | Portfolio</title>
+</head>
+<body id=top data-spy=scroll data-target=#TableOfContents data-offset=71>
+<aside class=search-results id=search>
+<div class=container>
+<section class=search-header>
+<div class="row no-gutters justify-content-between mb-3">
+<div class=col-6>
+<h1>Search</h1>
+</div>
+<div class="col-6 col-search-close">
+<a class=js-search href=#><i class="fas fa-times-circle text-muted" aria-hidden=true></i></a>
+</div>
+</div>
+<div id=search-box>
+</div>
+</section>
+<section class=section-search-results>
+<div id=search-hits>
+</div>
+</section>
+</div>
+</aside>
+<nav class="navbar navbar-light fixed-top navbar-expand-lg py-0" id=navbar-main>
+<div class=container>
+<a class=navbar-brand href=/>Portfolio</a>
+<button type=button class=navbar-toggler data-toggle=collapse data-target=#navbar aria-controls=navbar aria-expanded=false aria-label="Toggle navigation"><span><i class="fas fa-bars"></i></span>
+</button>
+<div class="collapse navbar-collapse" id=navbar>
+<ul class="navbar-nav ml-auto">
+<li class=nav-item>
+<a class=nav-link href=/#about><span>Home</span></a>
+</li>
+<li class=nav-item>
+<a class=nav-link href=/#posts><span>Posts</span></a>
+</li>
+<li class=nav-item>
+<a class=nav-link href=/#projects><span>Projects</span></a>
+</li>
+<li class=nav-item>
+<a class=nav-link href=/#contact><span>Contact</span></a>
+</li>
+<li class=nav-item>
+<a class="nav-link js-dark-toggle" href=#><i class="fas fa-moon" aria-hidden=true></i></a>
+</li>
+</ul>
+</div>
+</div>
+</nav>
+<article class="article py-5" itemscope itemtype=http://schema.org/Article>
+<div class="container split-header">
+<div class="row justify-content-center">
+<div class=col-lg-8>
+<img class="img-fluid w-100" src=/post/k-means-from-scratch/featured_huede27f6b16aba0681dec3a918882273b_199261_680x500_fill_q90_lanczos_smart1.jpeg itemprop=image alt>
+<span class=article-header-caption>Image credit: <a href=https://unsplash.com/@heyerlein><strong>h heyerlein</strong></a></span>
+</div>
+<div class=col-lg-8>
+<h1 itemprop=name>K-means Clustering from Scratch</h1>
+<p class=page-subtitle>NumPy is all you need</p>
+<meta content="2020-07-03 00:00:00 +0000 UTC" itemprop=datePublished>
+<meta content="2020-07-03 00:00:00 +0000 UTC" itemprop=dateModified>
+<div class=article-metadata>
+<div>
+<span itemprop="author name" itemtype=http://schema.org/Person><a href=/authors/admin/>Sayar Banerjee</a></span>
+</div>
+<span class=article-date>
+<time>Jul 3, 2020</time>
+</span>
+<span class=middot-divider></span>
+<span class=article-reading-time>
+8 min read
+</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class=article-container>
+<div class=article-style itemprop=articleBody>
+<blockquote>
+<p>An Algorithm must be seen to be believed — Donald Knuth</p>
+</blockquote>
+<h3 id=overview>Overview</h3>
+<p>The science of Machine Learning can be broadly classified into two categories:</p>
+<ul>
+<li><a href=https://en.wikipedia.org/wiki/Supervised_learning>Supervised learning</a></li>
+<li><a href=https://en.wikipedia.org/wiki/Unsupervised_learning>Unsupervised learning</a></li>
+</ul>
+<p>In this blog post, we will be implementing a popular unsupervised learning algorithm, k-means clustering.</p>
+<h2 id=this-popular-algorithm-uses-numerical-distance-measures-to-partition-data-into-clusters>This popular algorithm uses numerical distance measures to partition data into clusters.</h2>
+<h3 id=algorithm>Algorithm</h3>
+<p>Let’s say we have a bunch of observations and we want to segment “similar” observations together. We will use the following algorithm to achieve our goal.</p>
+<hr>
+<h4 id=_k-means-algorithm_><em>K-means algorithm</em></h4>
+<p><em>Input: k (number of clusters), D (data points)</em></p>
+<ol>
+<li><em>Choose random k data points as initial clusters mean</em></li>
+<li><em>Associate each data point in D to the nearest centroid. <br>
+This will divide the data into k clusters.</em></li>
+<li><em>Recompute centroids</em></li>
+<li><em>Repeat step 2 and step 3 until there are no more changes<br>
+of cluster membership of the data points.</em></li>
+</ol>
+<p>Let us look at the above algorithm in a bit more detail.</p>
+<p>We first assign each data point to a cluster randomly. We then compute the cluster means for each group of clusters.</p>
+<p>After that, we proceed to compute the squared <a href=https://en.wikipedia.org/wiki/Euclidean_distance>Euclidian distance</a> between each point and cluster means. We then assign a cluster to each data point based on the smallest squared euclidian distance between that data point and the cluster means for each cluster.</p>
+<p><img src=/posts_img/k_means_from_scratch/img_1.jpg alt>
+The cluster means are then recomputed and we continue reassigning each data point based on the squared euclidian distance until no data point’s cluster assignment is changed.</p>
+<p>If one were to ask a statistician, she/he might tell you that we are trying to minimize the <strong>within-cluster sum of squares (WCSS).</strong> Let’s now try to implement this algorithm in Python.</p>
+<p><img src=/posts_img/k_means_from_scratch/img_2.jpeg alt></p>
+<hr>
+<h3 id=implementation>Implementation</h3>
+<p>Though there are many library implementations of the k-means algorithm in Python, I decided to use only Numpy in order to provide an instructive approach. Numpy is a popular library in Python used for numerical computations.</p>
+<h4 id=code-walkthrough>Code Walkthrough</h4>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> numpy <span style=color:#66d9ef>as</span> np
+<span style=color:#f92672>import</span> tqdm
+<span style=color:#f92672>import</span> itertools
+<span style=color:#f92672>import</span> matplotlib.pyplot <span style=color:#66d9ef>as</span> plt
+
+
+<span style=color:#66d9ef>class</span> <span style=color:#a6e22e>Kmeans</span>:
+    <span style=color:#66d9ef>def</span> __init__(self, k<span style=color:#f92672>=</span><span style=color:#ae81ff>3</span>):
+        self<span style=color:#f92672>.</span>k <span style=color:#f92672>=</span> k
+        self<span style=color:#f92672>.</span>means <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+        self<span style=color:#f92672>.</span>_cluster_ids <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+</code></pre></div><p>We first create a class called <code>Kmeans</code> and pass a single constructor argument<code>k</code> to it. This argument is a <strong>hyperparameter</strong>. Hyperparameters are parameters that are set by the user before training the machine learning algorithm. In our case, this is the total number of clusters we wish to partition our data into. We also add two more attributes to the constructor, <code>means</code> which will store the cluster means and <code>_cluster_ids</code> which stores the id values of the clusters.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> numpy <span style=color:#66d9ef>as</span> np
+<span style=color:#f92672>import</span> tqdm
+<span style=color:#f92672>import</span> itertools
+<span style=color:#f92672>import</span> matplotlib.pyplot <span style=color:#66d9ef>as</span> plt
+
+
+<span style=color:#66d9ef>class</span> <span style=color:#a6e22e>Kmeans</span>:
+    <span style=color:#66d9ef>def</span> __init__(self, k<span style=color:#f92672>=</span><span style=color:#ae81ff>3</span>):
+        self<span style=color:#f92672>.</span>k <span style=color:#f92672>=</span> k
+        self<span style=color:#f92672>.</span>means <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+        self<span style=color:#f92672>.</span>_cluster_ids <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+
+    <span style=color:#a6e22e>@property</span>
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>cluster_ids</span>(self):
+        <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>_cluster_ids
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_init_centroid</span>(self, m):
+        <span style=color:#66d9ef>return</span> np<span style=color:#f92672>.</span>random<span style=color:#f92672>.</span>randint(<span style=color:#ae81ff>0</span>, self<span style=color:#f92672>.</span>k, m)
+</code></pre></div><p>We then create a method called <code>cluster_ids</code> which acts as a get method for our cluster ids. <code>@property</code> is a function decorator. To learn more about this, check out <a href=https://www.programiz.com/python-programming/property>this</a> article. Another method called <code>_init_centroid</code> is created to <strong>randomly assign</strong> each data point to a cluster.</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> numpy <span style=color:#66d9ef>as</span> np
+<span style=color:#f92672>import</span> tqdm
+<span style=color:#f92672>import</span> itertools
+<span style=color:#f92672>import</span> matplotlib.pyplot <span style=color:#66d9ef>as</span> plt
+
+
+<span style=color:#66d9ef>class</span> <span style=color:#a6e22e>Kmeans</span>:
+    <span style=color:#66d9ef>def</span> __init__(self, k<span style=color:#f92672>=</span><span style=color:#ae81ff>3</span>):
+        self<span style=color:#f92672>.</span>k <span style=color:#f92672>=</span> k
+        self<span style=color:#f92672>.</span>means <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+        self<span style=color:#f92672>.</span>_cluster_ids <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+
+    <span style=color:#a6e22e>@property</span>
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>cluster_ids</span>(self):
+        <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>_cluster_ids
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_init_centroid</span>(self, m):
+        <span style=color:#66d9ef>return</span> np<span style=color:#f92672>.</span>random<span style=color:#f92672>.</span>randint(<span style=color:#ae81ff>0</span>, self<span style=color:#f92672>.</span>k, m)
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_cluster_means</span>(self, X, clusters):
+        m, n <span style=color:#f92672>=</span> X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>], X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>1</span>]
+        <span style=color:#75715e># Extra column to store cluster ids</span>
+        temp <span style=color:#f92672>=</span> np<span style=color:#f92672>.</span>zeros((m, n <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>))
+        temp[:, :n], temp[:, n] <span style=color:#f92672>=</span> X, clusters
+        result <span style=color:#f92672>=</span> np<span style=color:#f92672>.</span>zeros((self<span style=color:#f92672>.</span>k, n))
+        <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(self<span style=color:#f92672>.</span>k):
+            subset <span style=color:#f92672>=</span> temp[np<span style=color:#f92672>.</span>where(temp[:, <span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>] <span style=color:#f92672>==</span> i), :n]
+            <span style=color:#66d9ef>if</span> subset[<span style=color:#ae81ff>0</span>]<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>] <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>0</span>:
+                result[i] <span style=color:#f92672>=</span> np<span style=color:#f92672>.</span>mean(subset[<span style=color:#ae81ff>0</span>], axis<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>)
+            <span style=color:#75715e># Choose random data point if a cluster does not </span>
+            <span style=color:#75715e># have any data associated with it</span>
+            <span style=color:#66d9ef>else</span>:
+                result[i] <span style=color:#f92672>=</span> X[np<span style=color:#f92672>.</span>random<span style=color:#f92672>.</span>choice(X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>], <span style=color:#ae81ff>1</span>, replace<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>)]
+
+        <span style=color:#66d9ef>return</span> result
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_compute_cluster</span>(self, x):
+        <span style=color:#75715e># Computes closest means to a data point x</span>
+        <span style=color:#66d9ef>return</span> min(range(self<span style=color:#f92672>.</span>k), key<span style=color:#f92672>=</span><span style=color:#66d9ef>lambda</span> i: np<span style=color:#f92672>.</span>linalg<span style=color:#f92672>.</span>norm(x <span style=color:#f92672>-</span> self<span style=color:#f92672>.</span>means[i])<span style=color:#f92672>**</span><span style=color:#ae81ff>2</span>)
+</code></pre></div><p><code>_cluster_means</code> computes the means of our clusters. It accepts a Numpy array containing the data and another Numpy array which has the cluster ids as input. We use a temporary array <code>temp</code> to store our features and the cluster ids. We then compute the means of every data point in each cluster and return it as an array.</p>
+<p>Note that there could be some clusters which may not have any data (because we randomly assign clusters initially). Hence, if there is a cluster with no data, we randomly select an observation to be a part of that cluster.</p>
+<p><code>_compute_cluster</code> is the method that determines which cluster’s means are closest to a data point. The <code>np.linalg.norm()</code> method does the computation for the <strong>euclidean distance</strong>. We square this to get the <strong>within-cluster sum of squares.</strong></p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#f92672>import</span> numpy <span style=color:#66d9ef>as</span> np
+<span style=color:#f92672>import</span> tqdm
+<span style=color:#f92672>import</span> itertools
+<span style=color:#f92672>import</span> matplotlib.pyplot <span style=color:#66d9ef>as</span> plt
+
+
+<span style=color:#66d9ef>class</span> <span style=color:#a6e22e>Kmeans</span>:
+    <span style=color:#66d9ef>def</span> __init__(self, k<span style=color:#f92672>=</span><span style=color:#ae81ff>3</span>):
+        self<span style=color:#f92672>.</span>k <span style=color:#f92672>=</span> k
+        self<span style=color:#f92672>.</span>means <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+        self<span style=color:#f92672>.</span>_cluster_ids <span style=color:#f92672>=</span> <span style=color:#66d9ef>None</span>
+
+    <span style=color:#a6e22e>@property</span>
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>cluster_ids</span>(self):
+        <span style=color:#66d9ef>return</span> self<span style=color:#f92672>.</span>_cluster_ids
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_init_centroid</span>(self, m):
+        <span style=color:#66d9ef>return</span> np<span style=color:#f92672>.</span>random<span style=color:#f92672>.</span>randint(<span style=color:#ae81ff>0</span>, self<span style=color:#f92672>.</span>k, m)
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_cluster_means</span>(self, X, clusters):
+        m, n <span style=color:#f92672>=</span> X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>], X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>1</span>]
+        <span style=color:#75715e># Extra column to store cluster ids</span>
+        temp <span style=color:#f92672>=</span> np<span style=color:#f92672>.</span>zeros((m, n <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>))
+        temp[:, :n], temp[:, n] <span style=color:#f92672>=</span> X, clusters
+        result <span style=color:#f92672>=</span> np<span style=color:#f92672>.</span>zeros((self<span style=color:#f92672>.</span>k, n))
+        <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(self<span style=color:#f92672>.</span>k):
+            subset <span style=color:#f92672>=</span> temp[np<span style=color:#f92672>.</span>where(temp[:, <span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>] <span style=color:#f92672>==</span> i), :n]
+            <span style=color:#66d9ef>if</span> subset[<span style=color:#ae81ff>0</span>]<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>] <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>0</span>:
+                result[i] <span style=color:#f92672>=</span> np<span style=color:#f92672>.</span>mean(subset[<span style=color:#ae81ff>0</span>], axis<span style=color:#f92672>=</span><span style=color:#ae81ff>0</span>)
+            <span style=color:#75715e># Choose random data point if a cluster does not </span>
+            <span style=color:#75715e># have any data associated with it</span>
+            <span style=color:#66d9ef>else</span>:
+                result[i] <span style=color:#f92672>=</span> X[np<span style=color:#f92672>.</span>random<span style=color:#f92672>.</span>choice(X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>], <span style=color:#ae81ff>1</span>, replace<span style=color:#f92672>=</span><span style=color:#66d9ef>True</span>)]
+
+        <span style=color:#66d9ef>return</span> result
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>_compute_cluster</span>(self, x):
+        <span style=color:#75715e># Computes closest means to a data point x</span>
+        <span style=color:#66d9ef>return</span> min(range(self<span style=color:#f92672>.</span>k), key<span style=color:#f92672>=</span><span style=color:#66d9ef>lambda</span> i: np<span style=color:#f92672>.</span>linalg<span style=color:#f92672>.</span>norm(x <span style=color:#f92672>-</span> self<span style=color:#f92672>.</span>means[i])<span style=color:#f92672>**</span><span style=color:#ae81ff>2</span>)
+
+    <span style=color:#66d9ef>def</span> <span style=color:#a6e22e>fit</span>(self, X, num_iterations<span style=color:#f92672>=</span><span style=color:#66d9ef>None</span>):
+        m <span style=color:#f92672>=</span> X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>]
+        <span style=color:#75715e># Initialize clusters</span>
+        initial_clusters <span style=color:#f92672>=</span> self<span style=color:#f92672>.</span>_init_centroid(m)
+        new_clusters <span style=color:#f92672>=</span> np<span style=color:#f92672>.</span>zeros(initial_clusters<span style=color:#f92672>.</span>shape)
+        <span style=color:#66d9ef>with</span> tqdm<span style=color:#f92672>.</span>tqdm(itertools<span style=color:#f92672>.</span>count()) <span style=color:#66d9ef>as</span> t:
+            <span style=color:#66d9ef>for</span> _ <span style=color:#f92672>in</span> t:
+                <span style=color:#75715e># Compute cluster means</span>
+                self<span style=color:#f92672>.</span>means <span style=color:#f92672>=</span> self<span style=color:#f92672>.</span>_cluster_means(X, initial_clusters)
+                <span style=color:#66d9ef>for</span> i <span style=color:#f92672>in</span> range(m):
+                    <span style=color:#75715e># Assign new cluster ids</span>
+                    new_clusters[i] <span style=color:#f92672>=</span> self<span style=color:#f92672>.</span>_compute_cluster(X[i])
+                <span style=color:#75715e># Check for data points that have switched cluster ids.</span>
+                count_changed <span style=color:#f92672>=</span> (new_clusters <span style=color:#f92672>!=</span> initial_clusters)<span style=color:#f92672>.</span>sum()
+                <span style=color:#66d9ef>if</span> count_changed <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>:
+                    <span style=color:#66d9ef>break</span>
+                initial_clusters <span style=color:#f92672>=</span> new_clusters
+                t<span style=color:#f92672>.</span>set_description(<span style=color:#e6db74>f</span><span style=color:#e6db74>&#34;changed: </span><span style=color:#e6db74>{</span>count_changed<span style=color:#e6db74>}</span><span style=color:#e6db74> / </span><span style=color:#e6db74>{</span>X<span style=color:#f92672>.</span>shape[<span style=color:#ae81ff>0</span>]<span style=color:#e6db74>}</span><span style=color:#e6db74>&#34;</span>)
+
+        self<span style=color:#f92672>.</span>_cluster_ids <span style=color:#f92672>=</span> new_clusters
+</code></pre></div><p>Finally, we create the fit method that orchestrates the clustering process.</p>
+<p>Steps in <code>fit()</code> method:</p>
+<ol>
+<li>We first initialize each observation to a cluster. We also create an array of zeroes to store the new cluster ids.</li>
+<li>We then use the function <code>itertools.count()</code> to create an infinite loop and compute cluster means.</li>
+<li>We then assign new cluster ids based on the squared distance between the cluster means and each data point.</li>
+<li>We then check if any data points changed clusters. If they did, then we use the new cluster ids to recompute the cluster means.</li>
+<li>Steps 2 to 4 are repeated until no data points change clusters.</li>
+</ol>
+<p>And there you have it, folks! You have successfully created your own k means clustering class capable of clustering data. Here are some results on a few datasets:</p>
+<h4 id=visualizations>Visualizations</h4>
+<p><img src=/posts_img/k_means_from_scratch/img_3.png alt>
+<img src=/posts_img/k_means_from_scratch/img_4.png alt>
+<img src=/posts_img/k_means_from_scratch/img_5.png alt></p>
+<hr>
+<h3 id=choosing-the-value-ofk>Choosing the value of k</h3>
+<p>Since k is a hyperparameter, we have to have some methodology in order to pick an optimal value of k. One popular method is the <a href="https://en.wikipedia.org/wiki/Elbow_method_%28clustering%29#:~:text=In%20cluster%20analysis%2C%20the%20elbow,number%20of%20clusters%20to%20use.">elbow method</a>.</p>
+<p>In short, the elbow method plots a curve of the number of clusters vs percentage of explained variation. The curve produced by the elbow method is used by practitioners to determine the optimal number of clusters by following the <a href=https://en.wikipedia.org/wiki/Diminishing_returns>law of diminishing returns</a>.</p>
+<p>If adding an extra cluster does not significantly improve the variation of k, we choose to stick to the current number of clusters.</p>
+<hr>
+<h3 id=tips-and-optimizations>Tips and Optimizations</h3>
+<p>Here are a couple of tips to ensure good clustering is obtained:</p>
+<ol>
+<li><strong>Removing non-numeric features</strong>: <br>
+Data may have non-numeric (categorical) features represented as numeric features. Instead of the numbers having some quantitative value, they might be used as labels for a group. For eg. if we are dealing with a population dataset, a column named “Gender” may have values 0 and 1 representing Male and Female. We must be careful in removing these features as they do not have any quantitative value and hence, will distort our algorithm’s notion of ‘distance’.</li>
+<li>**Feature Scaling:<br>
+**Numeric data will have different ranges. A particular feature with a huge range may adversely impact our clustering objective function. The feature with the big range values will dominate the clustering process over other features. Hence, it is crucial to scale our data so that the contribution of each feature is proportional to the algorithm.</li>
+<li>**Better Initialization:<br>
+**In our algorithm, we randomly assign the initial clusters to the data. Because of this inherent randomness, our algorithm may not always provide good clusters. There are a couple of ways by which the criterion for setting the initial clusters is improved. The <a href=https://en.wikipedia.org/wiki/K-means%2B%2B>k-means++</a> algorithm is a popular choice for this task.</li>
+<li>**Different Algorithms:<br>
+**There are certain algorithms that are variants of the k-means algorithm which are more robust in handling certain constraints such as outliers. One such algorithm is the <a href=https://en.wikipedia.org/wiki/K-medoids>k-medoids</a>. The k-medoids algorithm uses <a href=https://en.wikipedia.org/wiki/Taxicab_geometry>L1 distance</a> instead of L2 distance (Euclidean distance). There are a bunch of other clustering algorithms that are useful for specific applications such as hierarchal clustering, density-based clustering, fuzzy clustering, etc.</li>
+</ol>
+<hr>
+<h3 id=conclusion>Conclusion</h3>
+<p>I hope all of you enjoyed this blog post. For more articles on Data Science check out my other posts on medium. Feel free to connect with me on <a href=https://www.linkedin.com/in/sayarbanerjee/>LinkedIn</a>. The code for this blog post is on my <a href=https://github.com/Sayar1106/TowardsDataSciencecodefiles/blob/master/Kmeansfromscratch/kmeans.py>Github</a>.</p>
+<hr>
+<h3 id=references>References</h3>
+<p><a href=https://scikit-learn.org/stable/datasets/index.html#datasets title=https://scikit-learn.org/stable/datasets/index.html#datasets><strong>scikit-learn 0.23.1 documentation</strong></a><a href=https://scikit-learn.org/stable/datasets/index.html#datasets></a></p>
+<p><a href=https://en.wikipedia.org/wiki/K-means_clustering title=https://en.wikipedia.org/wiki/K-means_clustering><strong>k-means clustering</strong></a><a href=https://en.wikipedia.org/wiki/K-means_clustering></a></p>
+<p><a href=https://www.oreilly.com/library/view/data-science-from/9781492041122/ title=https://www.oreilly.com/library/view/data-science-from/9781492041122/><strong>Data Science from Scratch, 2nd Edition</strong></a><a href=https://www.oreilly.com/library/view/data-science-from/9781492041122/></a></p>
+</div>
+<div class=article-tags>
+<a class="badge badge-light" href=/tags/academia/>academia</a>
+</div>
+<div class="media author-card" itemscope itemtype=http://schema.org/Person>
+<div class=media-body>
+<h5 class=card-title itemprop=name><a href=https://examplesite.org>Sayar Banerjee</a></h5>
+<h6 class=card-subtitle>Analyst</h6>
+<p class=card-text itemprop=description>My research interests include Deep Learning, NLP, Computer Vision</p>
+<ul class=network-icon aria-hidden=true>
+<li>
+<a itemprop=sameAs href=/#contact>
+<i class="fas fa-envelope"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://twitter.com/sayar_banner target=_blank rel=noopener>
+<i class="fab fa-twitter"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://medium.com/@sayarbanerjee target=_blank rel=noopener>
+<i class="fab fa-medium"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://github.com/Sayar1106 target=_blank rel=noopener>
+<i class="fab fa-github"></i>
+</a>
+</li>
+<li>
+<a itemprop=sameAs href=https://www.linkedin.com/in/sayarbanerjee/ target=_blank rel=noopener>
+<i class="fab fa-linkedin"></i>
+</a>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</article>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/jquery.imagesloaded/4.1.4/imagesloaded.pkgd.min.js integrity="sha256-lqvxZrPLtfffUl2G/e7szqSvPBILGbwmsGE1MKlOi0Q=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/jquery.isotope/3.0.6/isotope.pkgd.min.js integrity="sha256-CBrpuqrMhXwcLLUd5tvQ4euBHCdh7wGlDfNz8vbu/iI=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js integrity="sha256-X5PoE3KU5l+JcX+w09p/wHl9AzK333C4hJ2I9S5mD4M=" crossorigin=anonymous></script>
+<script src=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js integrity="sha256-aYTdUrn6Ow1DDgh5JTc3aDGnnju48y/1c8s1dgkYPQ8=" crossorigin=anonymous></script>
+<script>hljs.initHighlightingOnLoad()</script>
+<script src=/js/academia.min.e40e230d9b3dfeac86994156b6388764.js></script>
+<div class=container>
+<footer class=site-footer>
+<div class=container>
+<div class="row align-items-center">
+<div class="col-md-6 mb-4 mb-md-0">
+<p class=mb-0>
+Copyright © 2021 &#183;
+Powered by
+<a href=https://gethugothemes.com target=_blank rel=noopener>Gethugothemes</a>
+</p>
+</div>
+<div class=col-md-6>
+<ul class="list-inline network-icon text-right mb-0">
+</ul>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div id=modal class="modal fade" role=dialog>
+<div class=modal-dialog>
+<div class=modal-content>
+<div class=modal-header>
+<h5 class=modal-title>Cite</h5>
+<button type=button class=close data-dismiss=modal aria-label=Close>
+<span aria-hidden=true>&#215;</span>
+</button>
+</div>
+<div class=modal-body>
+<pre><code class="tex hljs"></code></pre>
+</div>
+<div class=modal-footer>
+<a class="btn btn-outline-primary my-1 js-copy-cite" href=# target=_blank>
+<i class="fas fa-copy"></i> Copy
+</a>
+<a class="btn btn-outline-primary my-1 js-download-cite" href=# target=_blank>
+<i class="fas fa-download"></i> Download
+</a>
+<div id=modal-error></div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

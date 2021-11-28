@@ -1,0 +1,533 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Posts on Portfolio</title><link>https://examplesite.org/post/</link><description>Recent content in Posts on Portfolio</description><generator>Source Themes academia (https://sourcethemes.com/academic/)</generator><language>en-us</language><copyright>Copyright &amp;copy; {year}</copyright><lastBuildDate>Fri, 19 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://examplesite.org/post/index.xml" rel="self" type="application/rss+xml"/><item><title>Hosting FastAPI with Saturn Cloud Deployments</title><link>https://examplesite.org/post/fastapi-saturncloud/</link><pubDate>Fri, 19 Nov 2021 00:00:00 +0000</pubDate><guid>https://examplesite.org/post/fastapi-saturncloud/</guid><description>&lt;hr>
+&lt;p>Hi all, this article will explore the process of deploying a FastAPI application on Saturn Cloud. FastAPI is a robust web framework for building APIs with the Python language. &lt;a href="https://saturncloud.io?utm_source=Sayar+Medium&amp;amp;utm_medium=FastAPI+Blog&amp;amp;utm_campaign=FastAPI+Blog">Saturn Cloud&lt;/a> is a platform dedicated to scaling Machine Learning and Big Data pipelines and more.&lt;/p>
+&lt;p>The model will predict median house prices in California. Let&amp;rsquo;s jump right into it.&lt;/p>
+&lt;h3 id="resources">Resources&lt;/h3>
+&lt;p>👉 &lt;a href="https://github.com/Sayar1106/cali-house-prices-estimator">Repository&lt;/a>&lt;/p>
+&lt;p>👉 &lt;a href="https://fastapi.tiangolo.com/">FastAPI&lt;/a>&lt;/p>
+&lt;p>👉 &lt;a href="https://scikit-learn.org/stable/">Scikit-learn&lt;/a>&lt;/p>
+&lt;p>👉 &lt;a href="https://joblib.readthedocs.io/en/latest/">Joblib&lt;/a>&lt;/p>
+&lt;hr>
+&lt;h3 id="data-exploration">Data Exploration&lt;/h3>
+&lt;p>The dataset I will use for training our machine learning model is called &amp;ldquo;California Housing Prices.&amp;rdquo; It can be found &lt;a href="https://www.kaggle.com/camnugent/california-housing-prices">here&lt;/a>.&lt;/p>
+&lt;p>The contents of our data are as follows:&lt;/p>
+&lt;p>The data pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. Be warned, the data isn&amp;rsquo;t clean, so there are some preprocessing steps required! The columns are as follows, and their names are pretty self-explanatory:&lt;/p>
+&lt;ul>
+&lt;li>longitude&lt;/li>
+&lt;li>latitude&lt;/li>
+&lt;li>housing_median_age&lt;/li>
+&lt;li>total_rooms&lt;/li>
+&lt;li>total_bedrooms&lt;/li>
+&lt;li>population&lt;/li>
+&lt;li>households&lt;/li>
+&lt;li>median_income&lt;/li>
+&lt;li>median_house_ value&lt;/li>
+&lt;li>ocean_proximity&lt;/li>
+&lt;/ul>
+&lt;p>On doing a rudimentary exploration of the dataset, I found the following:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_1.png" alt="">&lt;/p>
+&lt;p>A correlation plot between all the numerical features shows us the following:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_2.png" alt="">&lt;/p>
+&lt;p>According to the graph, most numerical features have very little correlation with median_house_value except median_income, which seems to have a strong positive correlation of around 0.68.&lt;/p>
+&lt;hr>
+&lt;h3 id="data-cleaningfeature-engineering">Data Cleaning/Feature Engineering&lt;/h3>
+&lt;p>Since the total_bedrooms feature had missing values, I had to impute it. For simplicity, I chose the median as the metric to impute the feature.&lt;/p>
+&lt;p>Additionally, two new features were engineered, namely, &amp;ldquo;rooms_per_households&amp;rdquo; and &amp;ldquo;population_per_household.&amp;rdquo;&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_3.png" alt="">&lt;/p>
+&lt;hr>
+&lt;h3 id="training-themodel">Training the Model&lt;/h3>
+&lt;p>Our repository looks like this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_4.png" alt="">&lt;/p>
+&lt;p>The requirements.txt file contains our dependencies. It is crucial to have all the dependencies added to this file as it will be used during our deployment.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_5.png" alt="">&lt;/p>
+&lt;p>The file src/main.py contains our training script. Let us take a look at some of the essential functions in the script.&lt;/p>
+&lt;p>Our training model pipeline is relatively standard. There is just one categorical column (ocean_proximity). For the other numerical columns, I applied a standard scaler. The ColumnTransformer estimator helps to facilitate feature transformations on heterogeneous data.&lt;/p>
+&lt;p>As for the model, I chose the Random Forest algorithm. I created the pipeline using scikit-learn&amp;rsquo;s Pipeline class.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_6.png" alt="">&lt;/p>
+&lt;p>I used joblib to save our model. Since the model file was quite large (&amp;gt;100Mb), I decided to store it in AWS S3. The model&amp;rsquo;s R² score was around 0.81, and the RMSE was around 49k.&lt;/p>
+&lt;hr>
+&lt;h3 id="setting-up-fastapi-server-andfrontend">Setting up FastAPI Server and Frontend&lt;/h3>
+&lt;p>As you may have guessed, app/main.py contains our code for the server. Since the model is stored in AWS, I used boto3 to download a local copy to the server.&lt;/p>
+&lt;p>If your bucket and file are private, you may need to set up authentication to access it on Saturn Cloud. You can do it by following this &lt;a href="https://saturncloud.io/docs/using-saturn-cloud/connect_data/">guide&lt;/a>.&lt;/p>
+&lt;p>I wrote a simple function to load our model from AWS:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_7.png" alt="">&lt;/p>
+&lt;p>The variables BUCKET_NAME and FILE_NAME are self-explanatory. LOCAL_PATH is the path to where the model will be copied locally.&lt;/p>
+&lt;p>I also defined global variables for the app, model, and templates.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_8.png" alt="">&lt;/p>
+&lt;h4 id="homepage">Homepage&lt;/h4>
+&lt;p>Since I&amp;rsquo;m creating an application, it&amp;rsquo;s essential to have a homepage to serve as an interface for the model server.&lt;/p>
+&lt;p>I created a homepage for the app so that users can enter values for each of the features. To render the page, I used Jinja2Templates, which is provided out of the box by FastAPI templates.TemplateResponse renders our landing page titled &amp;ldquo;index.html.&amp;rdquo;&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_9.png" alt="">&lt;/p>
+&lt;p>index.html contains a form that will serve as the frontend for our application. The body of the page looks like this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_10.png" alt="">&lt;/p>
+&lt;p>If you look closely at the form tag, you will see that the action attribute is set to &amp;ldquo;/submitform&amp;rdquo; and the request method is a POST request.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_11.png" alt="">&lt;/p>
+&lt;p>Our FastAPI server needs to have a method that handles the form data. This method needs to be decorated by app.post(&amp;quot;/submitform&amp;quot;) to handle the request appropriately.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_12.png" alt="">&lt;/p>
+&lt;p>You will notice that each of the variables is set as form parameters using Form. This class tells FastAPI that each variable&amp;rsquo;s input is being received from a form.&lt;/p>
+&lt;p>You will also notice that line 26 has a method called predict. This method is actually where the model pipeline is fed the input from the form using the appropriate format. Since the pipeline can only receive input from a data frame, I first convert the data into a data frame. I then created the features as part of the feature engineering process. Finally, I return the model&amp;rsquo;s predictions.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_13.png" alt="">&lt;/p>
+&lt;p>Once I had the price prediction, I used templates.TemplateResponse again to return a page called result.html. Along with &amp;ldquo;request&amp;rdquo;, I also passed &amp;ldquo;price&amp;rdquo; through the TemplateResponse method. Finally, I rendered the price on the body of result.html.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_14.png" alt="">&lt;/p>
+&lt;hr>
+&lt;h3 id="deploying-to-saturncloud">Deploying to Saturn Cloud&lt;/h3>
+&lt;p>Before setting up the deployment, I pushed all of the code to Github. To deploy it, you must have your repository connected to Saturn Cloud. To do so, you can follow this &lt;a href="https://saturncloud.io/docs/using-saturn-cloud/gitrepo/">guide&lt;/a>.&lt;/p>
+&lt;p>Once your repo is connected, head over to resources and select &amp;ldquo;New Deployment&amp;rdquo;.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_15.png" alt="">&lt;/p>
+&lt;p>After this, you will be greeted with a form:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_16.png" alt="">&lt;/p>
+&lt;p>There are a few things to note when filling out the form. For instance, the &amp;ldquo;Command&amp;rdquo; is what the deployment will run to start your application.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_17.png" alt="">&lt;/p>
+&lt;p>Note that Saturn Cloud requires your applications to listen using port 8000.&lt;/p>
+&lt;p>Also, note the Extra Packages header. This is the script that will be used to install additional packages before the command is run. Since Saturn Cloud&amp;rsquo;s default image does not have certain libraries like FastAPI and Uvicorn, pass &amp;ldquo;-r requirements.txt&amp;rdquo; to the text box.&lt;/p>
+&lt;p>This ensures that the script &amp;ldquo;`pip install -r requirements.txt` &amp;ldquo;is run before startup, containing dependencies for the additional packages.&lt;/p>
+&lt;p>Note that you can also write the individual names of each package in this section to install them.&lt;/p>
+&lt;p>Once you hit the Create button, your deployment will be created. Click on it and add your Github repo to the deployment. Ensure that you add the path to the Github resource to your working directory. Once that is done, click the green arrow to start the deployment.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_18.png" alt="">&lt;/p>
+&lt;p>Once your deployment is ready, click on the public URL. You should see a page like this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_19.png" alt="">&lt;/p>
+&lt;p>Once you fill out the form, you will see a page with the predicted price:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_20.png" alt="">&lt;/p>
+&lt;p>Note that I used the last example of my test set as input. The actual median house price was $133000, so the model did a reasonably good job! 😀&lt;/p>
+&lt;p>&lt;strong>👉&lt;/strong> &lt;a href="https://github.com/Sayar1106/cali-house-prices-estimator">&lt;strong>Link to the Github directory&lt;/strong>&lt;/a>&lt;/p>
+&lt;hr>
+&lt;h3 id="conclusion">Conclusion&lt;/h3>
+&lt;p>Congratulations! You have successfully learned how to deploy a FastAPI model on &lt;a href="https://saturncloud.io?utm_source=Sayar+Medium&amp;amp;utm_medium=FastAPI+Blog&amp;amp;utm_campaign=FastAPI+Blog">Saturn Cloud&lt;/a>! If you&amp;rsquo;re curious about using their environment, they offer 30 free hours a month for data scientists and teams. I hope you enjoyed reading this article. Until next time! ✋&lt;/p></description></item><item><title>Fast Feature Engineering in Python; Image Data</title><link>https://examplesite.org/post/fast_feature_engineering_image/</link><pubDate>Thu, 16 Sep 2021 00:00:00 +0000</pubDate><guid>https://examplesite.org/post/fast_feature_engineering_image/</guid><description>&lt;blockquote>
+&lt;p>“Finding patterns is easy in any kind of data-rich environment; that’s what mediocre gamblers do. The key is in determining whether the patterns represent noise or signal.”&lt;br>
+― &lt;strong>Nate Silver&lt;/strong>&lt;/p>
+&lt;/blockquote>
+&lt;p>This article is part 2 of my “Fast Feature Engineering” series. If you have not read my first article which talks about tabular data, then I request you to check it out here:&lt;/p>
+&lt;p>&lt;a href="https://towardsdatascience.com/fast-feature-engineering-in-python-tabular-data-d050b68bb178" title="https://towardsdatascience.com/fast-feature-engineering-in-python-tabular-data-d050b68bb178">&lt;strong>Fast Feature Engineering in Python: Tabular Data&lt;/strong>&lt;/a>&lt;a href="https://towardsdatascience.com/fast-feature-engineering-in-python-tabular-data-d050b68bb178">&lt;/a>&lt;/p>
+&lt;p>This article will look at some of the best practices to follow when performing image processing as part of our machine learning workflow.&lt;/p>
+&lt;hr>
+&lt;h3 id="libraries">Libraries&lt;/h3>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#f92672">import&lt;/span> random
+&lt;span style="color:#f92672">from&lt;/span> PIL &lt;span style="color:#f92672">import&lt;/span> Image
+&lt;span style="color:#f92672">import&lt;/span> cv2
+&lt;span style="color:#f92672">import&lt;/span> numpy &lt;span style="color:#66d9ef">as&lt;/span> np
+&lt;span style="color:#f92672">from&lt;/span> matplotlib &lt;span style="color:#f92672">import&lt;/span> pyplot &lt;span style="color:#66d9ef">as&lt;/span> plt
+&lt;span style="color:#f92672">import&lt;/span> json
+&lt;span style="color:#f92672">import&lt;/span> albumentations &lt;span style="color:#66d9ef">as&lt;/span> A
+&lt;span style="color:#f92672">import&lt;/span> torch
+&lt;span style="color:#f92672">import&lt;/span> torchvision.models &lt;span style="color:#66d9ef">as&lt;/span> models
+&lt;span style="color:#f92672">import&lt;/span> torchvision.transforms &lt;span style="color:#66d9ef">as&lt;/span> transforms
+&lt;span style="color:#f92672">import&lt;/span> torch.nn &lt;span style="color:#66d9ef">as&lt;/span> nn
+&lt;span style="color:#f92672">from&lt;/span> tqdm &lt;span style="color:#f92672">import&lt;/span> tqdm_notebook
+&lt;span style="color:#f92672">from&lt;/span> torch.utils.data &lt;span style="color:#f92672">import&lt;/span> DataLoader
+&lt;span style="color:#f92672">from&lt;/span> torchvision.datasets &lt;span style="color:#f92672">import&lt;/span> CIFAR10
+&lt;/code>&lt;/pre>&lt;/div>&lt;hr>
+&lt;h3 id="resizescale-images">Resize/Scale Images&lt;/h3>
+&lt;p>Resizing is the most fundamental transformation done by deep learning practitioners in the field. The primary reason for doing this is to ensure that the input received by our deep learning system is &lt;strong>consistent&lt;/strong>.&lt;/p>
+&lt;p>Another reason for resizing is to &lt;strong>reduce the number of parameters&lt;/strong> in the model. Smaller dimensions signify a smaller neural network and hence, saves us the time and computation power required to train our model.&lt;/p>
+&lt;h4 id="_what-about-the-loss-of-information_">&lt;strong>&lt;em>What about the loss of information?&lt;/em>&lt;/strong>&lt;/h4>
+&lt;p>Some information is indeed &lt;strong>lost&lt;/strong> when you resize down from a larger image. However, depending on your task, you can choose how much information you’re willing to sacrifice for training time and compute resources.&lt;/p>
+&lt;p>For example, an &lt;a href="https://en.wikipedia.org/wiki/Object_detection">&lt;strong>object detection task&lt;/strong>&lt;/a> will require you to maintain the image&amp;rsquo;s aspect ratio since the goal is to detect the exact position of objects.&lt;/p>
+&lt;p>In contrast, an image classification task may require you to resize all images down to a specified size (224 x 224 is a good rule of thumb).&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_1.jpeg" alt="">&lt;/p>
+&lt;p>After resizing our image looks like this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_2.jpeg" alt="">&lt;/p>
+&lt;h4 id="_why-perform-imagescaling_">&lt;em>Why perform image scaling?&lt;/em>&lt;/h4>
+&lt;p>Similar to tabular data, scaling images for classification tasks can help our deep learning model&amp;rsquo;s learning rate to converge to the minima better.&lt;/p>
+&lt;p>Scaling ensures that a particular dimension does not dominate others. I found a fantastic answer on StackExchange regarding this. You can read it &lt;a href="https://stats.stackexchange.com/questions/185853/why-do-we-need-to-normalize-the-images-before-we-put-them-into-cnn">&lt;strong>here&lt;/strong>&lt;/a>.&lt;/p>
+&lt;p>One type of feature scaling is the process of &lt;strong>standardizing&lt;/strong> our pixel values. We do this by subtracting the mean of each channel from its pixel value and then divide it via standard deviation.&lt;/p>
+&lt;p>This is a popular choice of feature engineering when training models for classification tasks.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">mean &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>mean(img_resized, axis&lt;span style="color:#f92672">=&lt;/span>(&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>), keepdims&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)
+std &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>std(img_resized, axis&lt;span style="color:#f92672">=&lt;/span>(&lt;span style="color:#ae81ff">1&lt;/span>,&lt;span style="color:#ae81ff">2&lt;/span>), keepdims&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)
+img_std &lt;span style="color:#f92672">=&lt;/span> (img_resized &lt;span style="color:#f92672">-&lt;/span> mean) &lt;span style="color:#f92672">/&lt;/span> std
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;strong>&lt;em>Note: Like resizing, one may not want to do image scaling when performing object detection and image generation tasks.&lt;/em>&lt;/strong>&lt;/p>
+&lt;p>The example code above demonstrates the process of scaling an image via standardization. There are other forms of scaling such as &lt;strong>centering&lt;/strong> and &lt;strong>normalization&lt;/strong>.&lt;/p>
+&lt;hr>
+&lt;h3 id="augmentations-classification">Augmentations (Classification)&lt;/h3>
+&lt;p>The primary motivation behind augmenting images is due to the appreciable data requirement for computer vision tasks. Often, obtaining enough images for training can prove to be challenging for a multitude of reasons.&lt;/p>
+&lt;p>Image augmentation enables us to create new training samples by slightly modifying the original ones.&lt;/p>
+&lt;p>In this example, we will look at how to apply vanilla augmentations for a classification task. We can use the out of the box implementations of the &lt;strong>Albumentations&lt;/strong> library to do this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_3.jpeg" alt="">
+&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_4.jpeg" alt="">
+&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_5.jpeg" alt="">&lt;/p>
+&lt;p>By applying image augmentations, our deep learning models can generalize better to the task (avoid overfitting), thereby increasing its predictive power on unseen data.&lt;/p>
+&lt;hr>
+&lt;h3 id="augmentations-object-detection">Augmentations (Object Detection)&lt;/h3>
+&lt;p>The Albumentations library can also be used to create augmentations for other tasks such as object detections. Object detection requires us to create bounding boxes around the object of interest.&lt;/p>
+&lt;p>Working with raw data can prove to be challenging when trying to annotate images with the coordinates for the bounding boxes.&lt;/p>
+&lt;p>Fortunately, there are many publicly and freely available datasets that we can use to create an augmentation pipeline for object detection. One such dataset is the &lt;a href="https://public.roboflow.com/object-detection/chess-full">&lt;strong>Chess Dataset&lt;/strong>&lt;/a>.&lt;/p>
+&lt;p>The dataset contains 606 images of chess pieces on a chessboard.&lt;/p>
+&lt;p>Along with the images, a JSON file is provided that contains all the information pertaining to the bounding boxes for each chess piece in a single image.&lt;/p>
+&lt;p>By writing a simple function, we can visualize the data after the augmentation is applied:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#66d9ef">with&lt;/span> open(&lt;span style="color:#e6db74">&amp;#34;_annotations.coco.json&amp;#34;&lt;/span>) &lt;span style="color:#66d9ef">as&lt;/span> f:
+json_file &lt;span style="color:#f92672">=&lt;/span> json&lt;span style="color:#f92672">.&lt;/span>load(f)
+x_min, y_min, w, h &lt;span style="color:#f92672">=&lt;/span> json_file[&lt;span style="color:#e6db74">&amp;#39;annotations&amp;#39;&lt;/span>][&lt;span style="color:#ae81ff">0&lt;/span>][&lt;span style="color:#e6db74">&amp;#39;bbox&amp;#39;&lt;/span>]
+x_min, x_max, y_min, y_max &lt;span style="color:#f92672">=&lt;/span> int(x_min), int(x_min &lt;span style="color:#f92672">+&lt;/span> w), int(y_min), int(y_min &lt;span style="color:#f92672">+&lt;/span> h)
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">visualize_bbox&lt;/span>(img, bbox, class_name, color&lt;span style="color:#f92672">=&lt;/span>(&lt;span style="color:#ae81ff">0&lt;/span>, &lt;span style="color:#ae81ff">255&lt;/span>, &lt;span style="color:#ae81ff">0&lt;/span>), thickness&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">2&lt;/span>):
+x_min, y_min, w, h &lt;span style="color:#f92672">=&lt;/span> bbox
+x_min, x_max, y_min, y_max &lt;span style="color:#f92672">=&lt;/span> int(x_min), int(x_min &lt;span style="color:#f92672">+&lt;/span> w), int(y_min), int(y_min &lt;span style="color:#f92672">+&lt;/span> h)
+cv2&lt;span style="color:#f92672">.&lt;/span>rectangle(img, (x_min, y_min), (x_max, y_max), color&lt;span style="color:#f92672">=&lt;/span>color, thickness&lt;span style="color:#f92672">=&lt;/span>thickness)
+((text_width, text_height), _) &lt;span style="color:#f92672">=&lt;/span> cv2&lt;span style="color:#f92672">.&lt;/span>getTextSize(class_name, cv2&lt;span style="color:#f92672">.&lt;/span>FONT_HERSHEY_SIMPLEX, &lt;span style="color:#ae81ff">0.35&lt;/span>, &lt;span style="color:#ae81ff">1&lt;/span>)
+cv2&lt;span style="color:#f92672">.&lt;/span>rectangle(img, (x_min, y_min &lt;span style="color:#f92672">-&lt;/span> int(&lt;span style="color:#ae81ff">1.3&lt;/span> &lt;span style="color:#f92672">*&lt;/span> text_height)), (x_min &lt;span style="color:#f92672">+&lt;/span> text_width, y_min), BOX_COLOR, &lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>)
+cv2&lt;span style="color:#f92672">.&lt;/span>putText(
+img,
+text&lt;span style="color:#f92672">=&lt;/span>class_name,
+org&lt;span style="color:#f92672">=&lt;/span>(x_min, y_min &lt;span style="color:#f92672">-&lt;/span> int(&lt;span style="color:#ae81ff">0.3&lt;/span> &lt;span style="color:#f92672">*&lt;/span> text_height)),
+fontFace&lt;span style="color:#f92672">=&lt;/span>cv2&lt;span style="color:#f92672">.&lt;/span>FONT_HERSHEY_SIMPLEX,
+fontScale&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0.35&lt;/span>,
+color&lt;span style="color:#f92672">=&lt;/span>(&lt;span style="color:#ae81ff">255&lt;/span>, &lt;span style="color:#ae81ff">255&lt;/span>, &lt;span style="color:#ae81ff">255&lt;/span>),
+lineType&lt;span style="color:#f92672">=&lt;/span>cv2&lt;span style="color:#f92672">.&lt;/span>LINE_AA,
+)
+&lt;span style="color:#66d9ef">return&lt;/span> img
+bbox_img &lt;span style="color:#f92672">=&lt;/span> visualize_bbox(np&lt;span style="color:#f92672">.&lt;/span>array(img),
+json_file[&lt;span style="color:#e6db74">&amp;#39;annotations&amp;#39;&lt;/span>][&lt;span style="color:#ae81ff">0&lt;/span>][&lt;span style="color:#e6db74">&amp;#39;bbox&amp;#39;&lt;/span>],
+class_name&lt;span style="color:#f92672">=&lt;/span>json_file[&lt;span style="color:#e6db74">&amp;#39;categories&amp;#39;&lt;/span>][&lt;span style="color:#ae81ff">0&lt;/span>][&lt;span style="color:#e6db74">&amp;#39;name&amp;#39;&lt;/span>])
+Image&lt;span style="color:#f92672">.&lt;/span>fromarray(bbox_img)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;img src="https://examplesite.org/Users/Banner/Downloads/medium-export-aa5b5fa1b4f15ba326f851375de5c386499a5652f183eac85ab56b6ca8924b20/posts/md_1638090489769/img/1__MFakz3EYf73afrl__aT3S2A.jpeg" alt="">
+&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_6.jpeg" alt="">&lt;/p>
+&lt;p>Now, let’s try to create an augmentation pipeline using Albumentations.&lt;/p>
+&lt;p>The JSON file that contains the annotation information has the following keys:&lt;/p>
+&lt;p>&lt;code>dict_keys([‘info’, ‘licenses’, ‘categories’, ‘images’, ‘annotations’])&lt;/code>&lt;/p>
+&lt;p>&lt;code>images&lt;/code> contains information about the image file whereas &lt;code>annotations&lt;/code> contains information about the bounding boxes for each object in an image.&lt;/p>
+&lt;p>Finally, &lt;code>categories&lt;/code> contains keys that map to the type of chess pieces in the image.&lt;/p>
+&lt;pre tabindex="0">&lt;code>image_list = json_file.get('images')
+anno_list = json_file.get('annotations')
+cat_list = json_file.get('categories')
+&lt;/code>&lt;/pre>&lt;p>&lt;code>image_list&lt;/code> :&lt;/p>
+&lt;pre tabindex="0">&lt;code>[{'id': 0,
+'license': 1,
+'file_name': 'IMG_0317_JPG.rf.00207d2fe8c0a0f20715333d49d22b4f.jpg',
+'height': 416,
+'width': 416,
+'date_captured': '2021-02-23T17:32:58+00:00'},
+{'id': 1,
+'license': 1,
+'file_name': '5a8433ec79c881f84ef19a07dc73665d_jpg.rf.00544a8110f323e0d7721b3acf2a9e1e.jpg',
+'height': 416,
+'width': 416,
+'date_captured': '2021-02-23T17:32:58+00:00'},
+{'id': 2,
+'license': 1,
+'file_name': '675619f2c8078824cfd182cec2eeba95_jpg.rf.0130e3c26b1bf275bf240894ba73ed7c.jpg',
+'height': 416,
+'width': 416,
+'date_captured': '2021-02-23T17:32:58+00:00'},
+.
+.
+.
+.
+&lt;/code>&lt;/pre>&lt;p>&lt;code>anno_list&lt;/code> :&lt;/p>
+&lt;pre tabindex="0">&lt;code>[{'id': 0,
+'image_id': 0,
+'category_id': 7,
+'bbox': [220, 14, 18, 46.023746508293286],
+'area': 828.4274371492792,
+'segmentation':],
+'iscrowd': 0},
+{'id': 1,
+'image_id': 1,
+'category_id': 8,
+'bbox': [187, 103, 22.686527154676014, 59.127992255841036],
+'area': 1341.4088019136107,
+'segmentation': [],
+'iscrowd': 0},
+{'id': 2,
+'image_id': 2,
+'category_id': 10,
+'bbox': [203, 24, 24.26037020843023, 60.5],
+'area': 1467.752397610029,
+'segmentation': [],
+'iscrowd': 0},
+.
+.
+.
+.
+&lt;/code>&lt;/pre>&lt;p>&lt;code>cat_list&lt;/code> :&lt;/p>
+&lt;pre tabindex="0">&lt;code>[{'id': 0, 'name': 'pieces', 'supercategory': 'none'},
+{'id': 1, 'name': 'bishop', 'supercategory': 'pieces'},
+{'id': 2, 'name': 'black-bishop', 'supercategory': 'pieces'},
+{'id': 3, 'name': 'black-king', 'supercategory': 'pieces'},
+{'id': 4, 'name': 'black-knight', 'supercategory': 'pieces'},
+{'id': 5, 'name': 'black-pawn', 'supercategory': 'pieces'},
+{'id': 6, 'name': 'black-queen', 'supercategory': 'pieces'},
+{'id': 7, 'name': 'black-rook', 'supercategory': 'pieces'},
+{'id': 8, 'name': 'white-bishop', 'supercategory': 'pieces'},
+{'id': 9, 'name': 'white-king', 'supercategory': 'pieces'},
+{'id': 10, 'name': 'white-knight', 'supercategory': 'pieces'},
+{'id': 11, 'name': 'white-pawn', 'supercategory': 'pieces'},
+{'id': 12, 'name': 'white-queen', 'supercategory': 'pieces'},
+{'id': 13, 'name': 'white-rook', 'supercategory': 'pieces'}]
+&lt;/code>&lt;/pre>&lt;p>We have to alter the structure of these lists to create an efficient pipeline:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">new_anno_dict &lt;span style="color:#f92672">=&lt;/span> {}
+new_cat_dict &lt;span style="color:#f92672">=&lt;/span> {}
+&lt;span style="color:#66d9ef">for&lt;/span> item &lt;span style="color:#f92672">in&lt;/span> cat_list:
+new_cat_dict[item[&lt;span style="color:#e6db74">&amp;#39;id&amp;#39;&lt;/span>]] &lt;span style="color:#f92672">=&lt;/span> item[&lt;span style="color:#e6db74">&amp;#39;name&amp;#39;&lt;/span>]
+&lt;span style="color:#66d9ef">for&lt;/span> item &lt;span style="color:#f92672">in&lt;/span> anno_list:
+img_id &lt;span style="color:#f92672">=&lt;/span> item&lt;span style="color:#f92672">.&lt;/span>get(&lt;span style="color:#e6db74">&amp;#39;image_id&amp;#39;&lt;/span>)
+&lt;span style="color:#66d9ef">if&lt;/span> img_id &lt;span style="color:#f92672">not&lt;/span> &lt;span style="color:#f92672">in&lt;/span> new_anno_dict:
+temp_list &lt;span style="color:#f92672">=&lt;/span> []
+temp_list&lt;span style="color:#f92672">.&lt;/span>append(item)
+new_anno_dict[img_id] &lt;span style="color:#f92672">=&lt;/span> temp_list
+&lt;span style="color:#66d9ef">else&lt;/span>:
+new_anno_dict&lt;span style="color:#f92672">.&lt;/span>get(img_id)&lt;span style="color:#f92672">.&lt;/span>append(item)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Now, let’s create a simple augmentation pipeline that flips our image horizontally and adds a parameter for bounding boxes:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">transform &lt;span style="color:#f92672">=&lt;/span> A&lt;span style="color:#f92672">.&lt;/span>Compose(
+[A&lt;span style="color:#f92672">.&lt;/span>HorizontalFlip(p&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0.5&lt;/span>)],
+bbox_params&lt;span style="color:#f92672">=&lt;/span>A&lt;span style="color:#f92672">.&lt;/span>BboxParams(format&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#e6db74">&amp;#39;coco&amp;#39;&lt;/span>, label_fields&lt;span style="color:#f92672">=&lt;/span>[&lt;span style="color:#e6db74">&amp;#39;category_ids&amp;#39;&lt;/span>]),
+)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Lastly, we will create a dataset similar to the &lt;a href="https://pytorch.org/docs/stable/_modules/torch/utils/data/dataset.html#Dataset">&lt;strong>Dataset class&lt;/strong>&lt;/a> offered by Pytorch. To do this, we need to define a class that implements the methods &lt;code>__len__&lt;/code> and &lt;code>__getitem__&lt;/code>.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">ImageDataset&lt;/span>:
+&lt;span style="color:#66d9ef">def&lt;/span> __init__(self, path, img_list, anno_dict, cat_dict, albumentations&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">None&lt;/span>):
+self&lt;span style="color:#f92672">.&lt;/span>path &lt;span style="color:#f92672">=&lt;/span> path
+self&lt;span style="color:#f92672">.&lt;/span>img_list &lt;span style="color:#f92672">=&lt;/span> img_list
+self&lt;span style="color:#f92672">.&lt;/span>anno_dict &lt;span style="color:#f92672">=&lt;/span> anno_dict
+self&lt;span style="color:#f92672">.&lt;/span>cat_dict &lt;span style="color:#f92672">=&lt;/span> cat_dict
+self&lt;span style="color:#f92672">.&lt;/span>albumentations &lt;span style="color:#f92672">=&lt;/span> albumentations
+&lt;span style="color:#66d9ef">def&lt;/span> __len__(self):
+&lt;span style="color:#66d9ef">return&lt;/span> len(self&lt;span style="color:#f92672">.&lt;/span>img_list)
+&lt;span style="color:#66d9ef">def&lt;/span> __getitem__(self, idx):
+&lt;span style="color:#75715e"># Each image may have multiple objects thereby multiple bboxes&lt;/span>
+bboxes &lt;span style="color:#f92672">=&lt;/span> [item[&lt;span style="color:#e6db74">&amp;#39;bbox&amp;#39;&lt;/span>] &lt;span style="color:#66d9ef">for&lt;/span> item &lt;span style="color:#f92672">in&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>anno_dict[int(idx)]]
+cat_ids &lt;span style="color:#f92672">=&lt;/span> [item[&lt;span style="color:#e6db74">&amp;#39;category_id&amp;#39;&lt;/span>] &lt;span style="color:#66d9ef">for&lt;/span> item &lt;span style="color:#f92672">in&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>anno_dict[int(idx)]]
+categories &lt;span style="color:#f92672">=&lt;/span> [self&lt;span style="color:#f92672">.&lt;/span>cat_dict[idx] &lt;span style="color:#66d9ef">for&lt;/span> idx &lt;span style="color:#f92672">in&lt;/span> cat_ids]
+image &lt;span style="color:#f92672">=&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>img_list[idx]
+img &lt;span style="color:#f92672">=&lt;/span> Image&lt;span style="color:#f92672">.&lt;/span>open(&lt;span style="color:#e6db74">f&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span>&lt;span style="color:#e6db74">{&lt;/span>self&lt;span style="color:#f92672">.&lt;/span>path&lt;span style="color:#e6db74">}{&lt;/span>image&lt;span style="color:#f92672">.&lt;/span>get(&lt;span style="color:#e6db74">&amp;#39;file_name&amp;#39;&lt;/span>)&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span>)
+img &lt;span style="color:#f92672">=&lt;/span> img&lt;span style="color:#f92672">.&lt;/span>convert(&lt;span style="color:#e6db74">&amp;#34;RGB&amp;#34;&lt;/span>)
+img &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>array(img)
+&lt;span style="color:#66d9ef">if&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>albumentations &lt;span style="color:#f92672">is&lt;/span> &lt;span style="color:#f92672">not&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>:
+augmented &lt;span style="color:#f92672">=&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>albumentations(image&lt;span style="color:#f92672">=&lt;/span>img, bboxes&lt;span style="color:#f92672">=&lt;/span>bboxes, category_ids&lt;span style="color:#f92672">=&lt;/span>cat_ids)
+img &lt;span style="color:#f92672">=&lt;/span> augmented[&lt;span style="color:#e6db74">&amp;#34;image&amp;#34;&lt;/span>]
+&lt;span style="color:#66d9ef">return&lt;/span> {
+&lt;span style="color:#e6db74">&amp;#34;image&amp;#34;&lt;/span>: img,
+&lt;span style="color:#e6db74">&amp;#34;bboxes&amp;#34;&lt;/span>: augmented[&lt;span style="color:#e6db74">&amp;#34;bboxes&amp;#34;&lt;/span>],
+&lt;span style="color:#e6db74">&amp;#34;category_ids&amp;#34;&lt;/span>: augmented[&lt;span style="color:#e6db74">&amp;#34;category_ids&amp;#34;&lt;/span>],
+&lt;span style="color:#e6db74">&amp;#34;category&amp;#34;&lt;/span>: categories
+}
+&lt;span style="color:#75715e"># path is the path to the json_file and images&lt;/span>
+dataset &lt;span style="color:#f92672">=&lt;/span> ImageDataset(path, image_list, new_anno_dict, new_cat_dict, transform)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Here are some of the results while iterating on the custom dataset:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_7.jpeg" alt="">
+&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_8.jpeg" alt="">
+&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_9.jpeg" alt="">
+&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_10.jpeg" alt="">
+&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_11.jpeg" alt="">&lt;/p>
+&lt;p>Thus, we can now easily pass this custom dataset to a data loader to train our model.&lt;/p>
+&lt;hr>
+&lt;h3 id="feature-extraction">Feature Extraction&lt;/h3>
+&lt;p>You may have heard of pre-trained models being used to train image classifiers and for other supervised learning tasks.&lt;/p>
+&lt;p>But, did you know that you can also use pre-trained models for feature extraction of images?&lt;/p>
+&lt;p>In short feature extraction is a form of dimensionality reduction where a large number of pixels are reduced to a more efficient representation.&lt;/p>
+&lt;p>This is primarily useful for unsupervised machine learning tasks such as reverse image search.&lt;/p>
+&lt;p>Let’s try to extract features from images using Pytorch’s pre-trained models. To do this, we must first define our feature extractor class:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">ResnetFeatureExtractor&lt;/span>(nn&lt;span style="color:#f92672">.&lt;/span>Module):
+&lt;span style="color:#66d9ef">def&lt;/span> __init__(self, model):
+super(ResnetFeatureExtractor, self)&lt;span style="color:#f92672">.&lt;/span>__init__()
+self&lt;span style="color:#f92672">.&lt;/span>model &lt;span style="color:#f92672">=&lt;/span> nn&lt;span style="color:#f92672">.&lt;/span>Sequential(&lt;span style="color:#f92672">*&lt;/span>model&lt;span style="color:#f92672">.&lt;/span>children())[:&lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>]
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">forward&lt;/span>(self, x):
+&lt;span style="color:#66d9ef">return&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>model(x)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Note that in line 4, a new model is created with all of the layers of the original save for the last one. You will recall that the last layer in a neural network is a dense layer used for prediction outputs.&lt;/p>
+&lt;p>However, since we are only interested in extracting features, we do not require this last layer. Hence, it is excluded.&lt;/p>
+&lt;p>We then utilize torchvision’s pre-trained &lt;code>resnet34&lt;/code> model by passing it to the &lt;code>ResnetFeatureExtractor&lt;/code> constructor.&lt;/p>
+&lt;p>Let’s use the famous &lt;a href="https://paperswithcode.com/dataset/cifar-10">&lt;strong>CIFAR10 dataset&lt;/strong>&lt;/a> (50000 images), and loop over it to extract the features.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fast_feature_engineering/img_12.png" alt="">&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">cifar_dataset &lt;span style="color:#f92672">=&lt;/span> CIFAR10(&lt;span style="color:#e6db74">&amp;#34;./&amp;#34;&lt;/span>, transform&lt;span style="color:#f92672">=&lt;/span>transforms&lt;span style="color:#f92672">.&lt;/span>ToTensor(), download&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)
+cifar_dataloader &lt;span style="color:#f92672">=&lt;/span> DataLoader(cifar_dataset, batch_size&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>, shuffle&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)
+feature_extractor&lt;span style="color:#f92672">.&lt;/span>eval()
+feature_list &lt;span style="color:#f92672">=&lt;/span> []
+&lt;span style="color:#66d9ef">for&lt;/span> _, data &lt;span style="color:#f92672">in&lt;/span> enumerate(tqdm_notebook(cifar_dataloader)):
+inputs, labels &lt;span style="color:#f92672">=&lt;/span> data
+&lt;span style="color:#66d9ef">with&lt;/span> torch&lt;span style="color:#f92672">.&lt;/span>no_grad():
+extracted_features &lt;span style="color:#f92672">=&lt;/span> feature_extractor(inputs)
+extracted_features &lt;span style="color:#f92672">=&lt;/span> torch&lt;span style="color:#f92672">.&lt;/span>flatten(extracted_features)
+feature_list&lt;span style="color:#f92672">.&lt;/span>append(extracted_features)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>We now have a list of 50000 image feature vectors with each feature vector of size 512 (output size of the penultimate layer of the original resnet model).&lt;/p>
+&lt;pre tabindex="0">&lt;code>print(f&amp;quot;Number of feature vectors: {len(feature_list)}&amp;quot;) #50000
+print(f&amp;quot;Number of feature vectors: {len(feature_list[0])}&amp;quot;) #512
+&lt;/code>&lt;/pre>&lt;p>Thus, this list of feature vectors can now be used by statistical learning models such as KNN to search for similar images.&lt;/p>
+&lt;p>If you have reached this far then thank you very much for reading this article! I hope you have a fantastic day ahead! 😄&lt;/p>
+&lt;p>&lt;strong>👉&lt;/strong> &lt;a href="https://github.com/Sayar1106/TowardsDataSciencecodefiles/tree/master/fast_feature_engineering">&lt;strong>Code used in the article&lt;/strong>&lt;/a>&lt;/p>
+&lt;p>Until next time! ✋&lt;/p>
+&lt;hr>
+&lt;h3 id="references">References:&lt;/h3>
+&lt;ul>
+&lt;li>&lt;a href="https://www.cs.toronto.edu/~kriz/cifar.html">https://www.cs.toronto.edu/~kriz/cifar.html&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://www.practicaldeeplearning.ai/">https://www.practicaldeeplearning.ai/&lt;/a>&lt;/li>
+&lt;/ul></description></item><item><title>K-means Clustering from Scratch</title><link>https://examplesite.org/post/k-means-from-scratch/</link><pubDate>Fri, 03 Jul 2020 00:00:00 +0000</pubDate><guid>https://examplesite.org/post/k-means-from-scratch/</guid><description>&lt;blockquote>
+&lt;p>An Algorithm must be seen to be believed — Donald Knuth&lt;/p>
+&lt;/blockquote>
+&lt;h3 id="overview">Overview&lt;/h3>
+&lt;p>The science of Machine Learning can be broadly classified into two categories:&lt;/p>
+&lt;ul>
+&lt;li>&lt;a href="https://en.wikipedia.org/wiki/Supervised_learning">Supervised learning&lt;/a>&lt;/li>
+&lt;li>&lt;a href="https://en.wikipedia.org/wiki/Unsupervised_learning">Unsupervised learning&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;p>In this blog post, we will be implementing a popular unsupervised learning algorithm, k-means clustering.&lt;/p>
+&lt;h2 id="this-popular-algorithm-uses-numerical-distance-measures-to-partition-data-into-clusters">This popular algorithm uses numerical distance measures to partition data into clusters.&lt;/h2>
+&lt;h3 id="algorithm">Algorithm&lt;/h3>
+&lt;p>Let’s say we have a bunch of observations and we want to segment “similar” observations together. We will use the following algorithm to achieve our goal.&lt;/p>
+&lt;hr>
+&lt;h4 id="_k-means-algorithm_">&lt;em>K-means algorithm&lt;/em>&lt;/h4>
+&lt;p>&lt;em>Input: k (number of clusters), D (data points)&lt;/em>&lt;/p>
+&lt;ol>
+&lt;li>&lt;em>Choose random k data points as initial clusters mean&lt;/em>&lt;/li>
+&lt;li>&lt;em>Associate each data point in D to the nearest centroid. &lt;br>
+This will divide the data into k clusters.&lt;/em>&lt;/li>
+&lt;li>&lt;em>Recompute centroids&lt;/em>&lt;/li>
+&lt;li>&lt;em>Repeat step 2 and step 3 until there are no more changes&lt;br>
+of cluster membership of the data points.&lt;/em>&lt;/li>
+&lt;/ol>
+&lt;p>Let us look at the above algorithm in a bit more detail.&lt;/p>
+&lt;p>We first assign each data point to a cluster randomly. We then compute the cluster means for each group of clusters.&lt;/p>
+&lt;p>After that, we proceed to compute the squared &lt;a href="https://en.wikipedia.org/wiki/Euclidean_distance">Euclidian distance&lt;/a> between each point and cluster means. We then assign a cluster to each data point based on the smallest squared euclidian distance between that data point and the cluster means for each cluster.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/k_means_from_scratch/img_1.jpg" alt="">
+The cluster means are then recomputed and we continue reassigning each data point based on the squared euclidian distance until no data point’s cluster assignment is changed.&lt;/p>
+&lt;p>If one were to ask a statistician, she/he might tell you that we are trying to minimize the &lt;strong>within-cluster sum of squares (WCSS).&lt;/strong> Let’s now try to implement this algorithm in Python.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/k_means_from_scratch/img_2.jpeg" alt="">&lt;/p>
+&lt;hr>
+&lt;h3 id="implementation">Implementation&lt;/h3>
+&lt;p>Though there are many library implementations of the k-means algorithm in Python, I decided to use only Numpy in order to provide an instructive approach. Numpy is a popular library in Python used for numerical computations.&lt;/p>
+&lt;h4 id="code-walkthrough">Code Walkthrough&lt;/h4>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#f92672">import&lt;/span> numpy &lt;span style="color:#66d9ef">as&lt;/span> np
+&lt;span style="color:#f92672">import&lt;/span> tqdm
+&lt;span style="color:#f92672">import&lt;/span> itertools
+&lt;span style="color:#f92672">import&lt;/span> matplotlib.pyplot &lt;span style="color:#66d9ef">as&lt;/span> plt
+&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">Kmeans&lt;/span>:
+&lt;span style="color:#66d9ef">def&lt;/span> __init__(self, k&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">3&lt;/span>):
+self&lt;span style="color:#f92672">.&lt;/span>k &lt;span style="color:#f92672">=&lt;/span> k
+self&lt;span style="color:#f92672">.&lt;/span>means &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>We first create a class called &lt;code>Kmeans&lt;/code> and pass a single constructor argument&lt;code>k&lt;/code> to it. This argument is a &lt;strong>hyperparameter&lt;/strong>. Hyperparameters are parameters that are set by the user before training the machine learning algorithm. In our case, this is the total number of clusters we wish to partition our data into. We also add two more attributes to the constructor, &lt;code>means&lt;/code> which will store the cluster means and &lt;code>_cluster_ids&lt;/code> which stores the id values of the clusters.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#f92672">import&lt;/span> numpy &lt;span style="color:#66d9ef">as&lt;/span> np
+&lt;span style="color:#f92672">import&lt;/span> tqdm
+&lt;span style="color:#f92672">import&lt;/span> itertools
+&lt;span style="color:#f92672">import&lt;/span> matplotlib.pyplot &lt;span style="color:#66d9ef">as&lt;/span> plt
+&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">Kmeans&lt;/span>:
+&lt;span style="color:#66d9ef">def&lt;/span> __init__(self, k&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">3&lt;/span>):
+self&lt;span style="color:#f92672">.&lt;/span>k &lt;span style="color:#f92672">=&lt;/span> k
+self&lt;span style="color:#f92672">.&lt;/span>means &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+&lt;span style="color:#a6e22e">@property&lt;/span>
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">cluster_ids&lt;/span>(self):
+&lt;span style="color:#66d9ef">return&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">_init_centroid&lt;/span>(self, m):
+&lt;span style="color:#66d9ef">return&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>random&lt;span style="color:#f92672">.&lt;/span>randint(&lt;span style="color:#ae81ff">0&lt;/span>, self&lt;span style="color:#f92672">.&lt;/span>k, m)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>We then create a method called &lt;code>cluster_ids&lt;/code> which acts as a get method for our cluster ids. &lt;code>@property&lt;/code> is a function decorator. To learn more about this, check out &lt;a href="https://www.programiz.com/python-programming/property">this&lt;/a> article. Another method called &lt;code>_init_centroid&lt;/code> is created to &lt;strong>randomly assign&lt;/strong> each data point to a cluster.&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#f92672">import&lt;/span> numpy &lt;span style="color:#66d9ef">as&lt;/span> np
+&lt;span style="color:#f92672">import&lt;/span> tqdm
+&lt;span style="color:#f92672">import&lt;/span> itertools
+&lt;span style="color:#f92672">import&lt;/span> matplotlib.pyplot &lt;span style="color:#66d9ef">as&lt;/span> plt
+&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">Kmeans&lt;/span>:
+&lt;span style="color:#66d9ef">def&lt;/span> __init__(self, k&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">3&lt;/span>):
+self&lt;span style="color:#f92672">.&lt;/span>k &lt;span style="color:#f92672">=&lt;/span> k
+self&lt;span style="color:#f92672">.&lt;/span>means &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+&lt;span style="color:#a6e22e">@property&lt;/span>
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">cluster_ids&lt;/span>(self):
+&lt;span style="color:#66d9ef">return&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">_init_centroid&lt;/span>(self, m):
+&lt;span style="color:#66d9ef">return&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>random&lt;span style="color:#f92672">.&lt;/span>randint(&lt;span style="color:#ae81ff">0&lt;/span>, self&lt;span style="color:#f92672">.&lt;/span>k, m)
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">_cluster_means&lt;/span>(self, X, clusters):
+m, n &lt;span style="color:#f92672">=&lt;/span> X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>], X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">1&lt;/span>]
+&lt;span style="color:#75715e"># Extra column to store cluster ids&lt;/span>
+temp &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>zeros((m, n &lt;span style="color:#f92672">+&lt;/span> &lt;span style="color:#ae81ff">1&lt;/span>))
+temp[:, :n], temp[:, n] &lt;span style="color:#f92672">=&lt;/span> X, clusters
+result &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>zeros((self&lt;span style="color:#f92672">.&lt;/span>k, n))
+&lt;span style="color:#66d9ef">for&lt;/span> i &lt;span style="color:#f92672">in&lt;/span> range(self&lt;span style="color:#f92672">.&lt;/span>k):
+subset &lt;span style="color:#f92672">=&lt;/span> temp[np&lt;span style="color:#f92672">.&lt;/span>where(temp[:, &lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>] &lt;span style="color:#f92672">==&lt;/span> i), :n]
+&lt;span style="color:#66d9ef">if&lt;/span> subset[&lt;span style="color:#ae81ff">0&lt;/span>]&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>] &lt;span style="color:#f92672">&amp;gt;&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span>:
+result[i] &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>mean(subset[&lt;span style="color:#ae81ff">0&lt;/span>], axis&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0&lt;/span>)
+&lt;span style="color:#75715e"># Choose random data point if a cluster does not &lt;/span>
+&lt;span style="color:#75715e"># have any data associated with it&lt;/span>
+&lt;span style="color:#66d9ef">else&lt;/span>:
+result[i] &lt;span style="color:#f92672">=&lt;/span> X[np&lt;span style="color:#f92672">.&lt;/span>random&lt;span style="color:#f92672">.&lt;/span>choice(X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>], &lt;span style="color:#ae81ff">1&lt;/span>, replace&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)]
+&lt;span style="color:#66d9ef">return&lt;/span> result
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">_compute_cluster&lt;/span>(self, x):
+&lt;span style="color:#75715e"># Computes closest means to a data point x&lt;/span>
+&lt;span style="color:#66d9ef">return&lt;/span> min(range(self&lt;span style="color:#f92672">.&lt;/span>k), key&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">lambda&lt;/span> i: np&lt;span style="color:#f92672">.&lt;/span>linalg&lt;span style="color:#f92672">.&lt;/span>norm(x &lt;span style="color:#f92672">-&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>means[i])&lt;span style="color:#f92672">**&lt;/span>&lt;span style="color:#ae81ff">2&lt;/span>)
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>&lt;code>_cluster_means&lt;/code> computes the means of our clusters. It accepts a Numpy array containing the data and another Numpy array which has the cluster ids as input. We use a temporary array &lt;code>temp&lt;/code> to store our features and the cluster ids. We then compute the means of every data point in each cluster and return it as an array.&lt;/p>
+&lt;p>Note that there could be some clusters which may not have any data (because we randomly assign clusters initially). Hence, if there is a cluster with no data, we randomly select an observation to be a part of that cluster.&lt;/p>
+&lt;p>&lt;code>_compute_cluster&lt;/code> is the method that determines which cluster’s means are closest to a data point. The &lt;code>np.linalg.norm()&lt;/code> method does the computation for the &lt;strong>euclidean distance&lt;/strong>. We square this to get the &lt;strong>within-cluster sum of squares.&lt;/strong>&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-python" data-lang="python">&lt;span style="color:#f92672">import&lt;/span> numpy &lt;span style="color:#66d9ef">as&lt;/span> np
+&lt;span style="color:#f92672">import&lt;/span> tqdm
+&lt;span style="color:#f92672">import&lt;/span> itertools
+&lt;span style="color:#f92672">import&lt;/span> matplotlib.pyplot &lt;span style="color:#66d9ef">as&lt;/span> plt
+&lt;span style="color:#66d9ef">class&lt;/span> &lt;span style="color:#a6e22e">Kmeans&lt;/span>:
+&lt;span style="color:#66d9ef">def&lt;/span> __init__(self, k&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">3&lt;/span>):
+self&lt;span style="color:#f92672">.&lt;/span>k &lt;span style="color:#f92672">=&lt;/span> k
+self&lt;span style="color:#f92672">.&lt;/span>means &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#66d9ef">None&lt;/span>
+&lt;span style="color:#a6e22e">@property&lt;/span>
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">cluster_ids&lt;/span>(self):
+&lt;span style="color:#66d9ef">return&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">_init_centroid&lt;/span>(self, m):
+&lt;span style="color:#66d9ef">return&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>random&lt;span style="color:#f92672">.&lt;/span>randint(&lt;span style="color:#ae81ff">0&lt;/span>, self&lt;span style="color:#f92672">.&lt;/span>k, m)
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">_cluster_means&lt;/span>(self, X, clusters):
+m, n &lt;span style="color:#f92672">=&lt;/span> X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>], X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">1&lt;/span>]
+&lt;span style="color:#75715e"># Extra column to store cluster ids&lt;/span>
+temp &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>zeros((m, n &lt;span style="color:#f92672">+&lt;/span> &lt;span style="color:#ae81ff">1&lt;/span>))
+temp[:, :n], temp[:, n] &lt;span style="color:#f92672">=&lt;/span> X, clusters
+result &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>zeros((self&lt;span style="color:#f92672">.&lt;/span>k, n))
+&lt;span style="color:#66d9ef">for&lt;/span> i &lt;span style="color:#f92672">in&lt;/span> range(self&lt;span style="color:#f92672">.&lt;/span>k):
+subset &lt;span style="color:#f92672">=&lt;/span> temp[np&lt;span style="color:#f92672">.&lt;/span>where(temp[:, &lt;span style="color:#f92672">-&lt;/span>&lt;span style="color:#ae81ff">1&lt;/span>] &lt;span style="color:#f92672">==&lt;/span> i), :n]
+&lt;span style="color:#66d9ef">if&lt;/span> subset[&lt;span style="color:#ae81ff">0&lt;/span>]&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>] &lt;span style="color:#f92672">&amp;gt;&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span>:
+result[i] &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>mean(subset[&lt;span style="color:#ae81ff">0&lt;/span>], axis&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#ae81ff">0&lt;/span>)
+&lt;span style="color:#75715e"># Choose random data point if a cluster does not &lt;/span>
+&lt;span style="color:#75715e"># have any data associated with it&lt;/span>
+&lt;span style="color:#66d9ef">else&lt;/span>:
+result[i] &lt;span style="color:#f92672">=&lt;/span> X[np&lt;span style="color:#f92672">.&lt;/span>random&lt;span style="color:#f92672">.&lt;/span>choice(X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>], &lt;span style="color:#ae81ff">1&lt;/span>, replace&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">True&lt;/span>)]
+&lt;span style="color:#66d9ef">return&lt;/span> result
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">_compute_cluster&lt;/span>(self, x):
+&lt;span style="color:#75715e"># Computes closest means to a data point x&lt;/span>
+&lt;span style="color:#66d9ef">return&lt;/span> min(range(self&lt;span style="color:#f92672">.&lt;/span>k), key&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">lambda&lt;/span> i: np&lt;span style="color:#f92672">.&lt;/span>linalg&lt;span style="color:#f92672">.&lt;/span>norm(x &lt;span style="color:#f92672">-&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>means[i])&lt;span style="color:#f92672">**&lt;/span>&lt;span style="color:#ae81ff">2&lt;/span>)
+&lt;span style="color:#66d9ef">def&lt;/span> &lt;span style="color:#a6e22e">fit&lt;/span>(self, X, num_iterations&lt;span style="color:#f92672">=&lt;/span>&lt;span style="color:#66d9ef">None&lt;/span>):
+m &lt;span style="color:#f92672">=&lt;/span> X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>]
+&lt;span style="color:#75715e"># Initialize clusters&lt;/span>
+initial_clusters &lt;span style="color:#f92672">=&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>_init_centroid(m)
+new_clusters &lt;span style="color:#f92672">=&lt;/span> np&lt;span style="color:#f92672">.&lt;/span>zeros(initial_clusters&lt;span style="color:#f92672">.&lt;/span>shape)
+&lt;span style="color:#66d9ef">with&lt;/span> tqdm&lt;span style="color:#f92672">.&lt;/span>tqdm(itertools&lt;span style="color:#f92672">.&lt;/span>count()) &lt;span style="color:#66d9ef">as&lt;/span> t:
+&lt;span style="color:#66d9ef">for&lt;/span> _ &lt;span style="color:#f92672">in&lt;/span> t:
+&lt;span style="color:#75715e"># Compute cluster means&lt;/span>
+self&lt;span style="color:#f92672">.&lt;/span>means &lt;span style="color:#f92672">=&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>_cluster_means(X, initial_clusters)
+&lt;span style="color:#66d9ef">for&lt;/span> i &lt;span style="color:#f92672">in&lt;/span> range(m):
+&lt;span style="color:#75715e"># Assign new cluster ids&lt;/span>
+new_clusters[i] &lt;span style="color:#f92672">=&lt;/span> self&lt;span style="color:#f92672">.&lt;/span>_compute_cluster(X[i])
+&lt;span style="color:#75715e"># Check for data points that have switched cluster ids.&lt;/span>
+count_changed &lt;span style="color:#f92672">=&lt;/span> (new_clusters &lt;span style="color:#f92672">!=&lt;/span> initial_clusters)&lt;span style="color:#f92672">.&lt;/span>sum()
+&lt;span style="color:#66d9ef">if&lt;/span> count_changed &lt;span style="color:#f92672">==&lt;/span> &lt;span style="color:#ae81ff">0&lt;/span>:
+&lt;span style="color:#66d9ef">break&lt;/span>
+initial_clusters &lt;span style="color:#f92672">=&lt;/span> new_clusters
+t&lt;span style="color:#f92672">.&lt;/span>set_description(&lt;span style="color:#e6db74">f&lt;/span>&lt;span style="color:#e6db74">&amp;#34;changed: &lt;/span>&lt;span style="color:#e6db74">{&lt;/span>count_changed&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74"> / &lt;/span>&lt;span style="color:#e6db74">{&lt;/span>X&lt;span style="color:#f92672">.&lt;/span>shape[&lt;span style="color:#ae81ff">0&lt;/span>]&lt;span style="color:#e6db74">}&lt;/span>&lt;span style="color:#e6db74">&amp;#34;&lt;/span>)
+self&lt;span style="color:#f92672">.&lt;/span>_cluster_ids &lt;span style="color:#f92672">=&lt;/span> new_clusters
+&lt;/code>&lt;/pre>&lt;/div>&lt;p>Finally, we create the fit method that orchestrates the clustering process.&lt;/p>
+&lt;p>Steps in &lt;code>fit()&lt;/code> method:&lt;/p>
+&lt;ol>
+&lt;li>We first initialize each observation to a cluster. We also create an array of zeroes to store the new cluster ids.&lt;/li>
+&lt;li>We then use the function &lt;code>itertools.count()&lt;/code> to create an infinite loop and compute cluster means.&lt;/li>
+&lt;li>We then assign new cluster ids based on the squared distance between the cluster means and each data point.&lt;/li>
+&lt;li>We then check if any data points changed clusters. If they did, then we use the new cluster ids to recompute the cluster means.&lt;/li>
+&lt;li>Steps 2 to 4 are repeated until no data points change clusters.&lt;/li>
+&lt;/ol>
+&lt;p>And there you have it, folks! You have successfully created your own k means clustering class capable of clustering data. Here are some results on a few datasets:&lt;/p>
+&lt;h4 id="visualizations">Visualizations&lt;/h4>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/k_means_from_scratch/img_3.png" alt="">
+&lt;img src="https://examplesite.org/posts_img/k_means_from_scratch/img_4.png" alt="">
+&lt;img src="https://examplesite.org/posts_img/k_means_from_scratch/img_5.png" alt="">&lt;/p>
+&lt;hr>
+&lt;h3 id="choosing-the-value-ofk">Choosing the value of k&lt;/h3>
+&lt;p>Since k is a hyperparameter, we have to have some methodology in order to pick an optimal value of k. One popular method is the &lt;a href="https://en.wikipedia.org/wiki/Elbow_method_%28clustering%29#:~:text=In%20cluster%20analysis%2C%20the%20elbow,number%20of%20clusters%20to%20use.">elbow method&lt;/a>.&lt;/p>
+&lt;p>In short, the elbow method plots a curve of the number of clusters vs percentage of explained variation. The curve produced by the elbow method is used by practitioners to determine the optimal number of clusters by following the &lt;a href="https://en.wikipedia.org/wiki/Diminishing_returns">law of diminishing returns&lt;/a>.&lt;/p>
+&lt;p>If adding an extra cluster does not significantly improve the variation of k, we choose to stick to the current number of clusters.&lt;/p>
+&lt;hr>
+&lt;h3 id="tips-and-optimizations">Tips and Optimizations&lt;/h3>
+&lt;p>Here are a couple of tips to ensure good clustering is obtained:&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>Removing non-numeric features&lt;/strong>: &lt;br>
+Data may have non-numeric (categorical) features represented as numeric features. Instead of the numbers having some quantitative value, they might be used as labels for a group. For eg. if we are dealing with a population dataset, a column named “Gender” may have values 0 and 1 representing Male and Female. We must be careful in removing these features as they do not have any quantitative value and hence, will distort our algorithm’s notion of ‘distance’.&lt;/li>
+&lt;li>**Feature Scaling:&lt;br>
+**Numeric data will have different ranges. A particular feature with a huge range may adversely impact our clustering objective function. The feature with the big range values will dominate the clustering process over other features. Hence, it is crucial to scale our data so that the contribution of each feature is proportional to the algorithm.&lt;/li>
+&lt;li>**Better Initialization:&lt;br>
+**In our algorithm, we randomly assign the initial clusters to the data. Because of this inherent randomness, our algorithm may not always provide good clusters. There are a couple of ways by which the criterion for setting the initial clusters is improved. The &lt;a href="https://en.wikipedia.org/wiki/K-means%2B%2B">k-means++&lt;/a> algorithm is a popular choice for this task.&lt;/li>
+&lt;li>**Different Algorithms:&lt;br>
+**There are certain algorithms that are variants of the k-means algorithm which are more robust in handling certain constraints such as outliers. One such algorithm is the &lt;a href="https://en.wikipedia.org/wiki/K-medoids">k-medoids&lt;/a>. The k-medoids algorithm uses &lt;a href="https://en.wikipedia.org/wiki/Taxicab_geometry">L1 distance&lt;/a> instead of L2 distance (Euclidean distance). There are a bunch of other clustering algorithms that are useful for specific applications such as hierarchal clustering, density-based clustering, fuzzy clustering, etc.&lt;/li>
+&lt;/ol>
+&lt;hr>
+&lt;h3 id="conclusion">Conclusion&lt;/h3>
+&lt;p>I hope all of you enjoyed this blog post. For more articles on Data Science check out my other posts on medium. Feel free to connect with me on &lt;a href="https://www.linkedin.com/in/sayarbanerjee/">LinkedIn&lt;/a>. The code for this blog post is on my &lt;a href="https://github.com/Sayar1106/TowardsDataSciencecodefiles/blob/master/Kmeansfromscratch/kmeans.py">Github&lt;/a>.&lt;/p>
+&lt;hr>
+&lt;h3 id="references">References&lt;/h3>
+&lt;p>&lt;a href="https://scikit-learn.org/stable/datasets/index.html#datasets" title="https://scikit-learn.org/stable/datasets/index.html#datasets">&lt;strong>scikit-learn 0.23.1 documentation&lt;/strong>&lt;/a>&lt;a href="https://scikit-learn.org/stable/datasets/index.html#datasets">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://en.wikipedia.org/wiki/K-means_clustering" title="https://en.wikipedia.org/wiki/K-means_clustering">&lt;strong>k-means clustering&lt;/strong>&lt;/a>&lt;a href="https://en.wikipedia.org/wiki/K-means_clustering">&lt;/a>&lt;/p>
+&lt;p>&lt;a href="https://www.oreilly.com/library/view/data-science-from/9781492041122/" title="https://www.oreilly.com/library/view/data-science-from/9781492041122/">&lt;strong>Data Science from Scratch, 2nd Edition&lt;/strong>&lt;/a>&lt;a href="https://www.oreilly.com/library/view/data-science-from/9781492041122/">&lt;/a>&lt;/p></description></item></channel></rss>

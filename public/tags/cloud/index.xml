@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>cloud on Portfolio</title><link>https://examplesite.org/tags/cloud/</link><description>Recent content in cloud on Portfolio</description><generator>Source Themes academia (https://sourcethemes.com/academic/)</generator><language>en-us</language><copyright>Copyright &amp;copy; {year}</copyright><lastBuildDate>Fri, 19 Nov 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://examplesite.org/tags/cloud/index.xml" rel="self" type="application/rss+xml"/><item><title>Hosting FastAPI with Saturn Cloud Deployments</title><link>https://examplesite.org/post/fastapi-saturncloud/</link><pubDate>Fri, 19 Nov 2021 00:00:00 +0000</pubDate><guid>https://examplesite.org/post/fastapi-saturncloud/</guid><description>&lt;hr>
+&lt;p>Hi all, this article will explore the process of deploying a FastAPI application on Saturn Cloud. FastAPI is a robust web framework for building APIs with the Python language. &lt;a href="https://saturncloud.io?utm_source=Sayar+Medium&amp;amp;utm_medium=FastAPI+Blog&amp;amp;utm_campaign=FastAPI+Blog">Saturn Cloud&lt;/a> is a platform dedicated to scaling Machine Learning and Big Data pipelines and more.&lt;/p>
+&lt;p>The model will predict median house prices in California. Let&amp;rsquo;s jump right into it.&lt;/p>
+&lt;h3 id="resources">Resources&lt;/h3>
+&lt;p>👉 &lt;a href="https://github.com/Sayar1106/cali-house-prices-estimator">Repository&lt;/a>&lt;/p>
+&lt;p>👉 &lt;a href="https://fastapi.tiangolo.com/">FastAPI&lt;/a>&lt;/p>
+&lt;p>👉 &lt;a href="https://scikit-learn.org/stable/">Scikit-learn&lt;/a>&lt;/p>
+&lt;p>👉 &lt;a href="https://joblib.readthedocs.io/en/latest/">Joblib&lt;/a>&lt;/p>
+&lt;hr>
+&lt;h3 id="data-exploration">Data Exploration&lt;/h3>
+&lt;p>The dataset I will use for training our machine learning model is called &amp;ldquo;California Housing Prices.&amp;rdquo; It can be found &lt;a href="https://www.kaggle.com/camnugent/california-housing-prices">here&lt;/a>.&lt;/p>
+&lt;p>The contents of our data are as follows:&lt;/p>
+&lt;p>The data pertains to the houses found in a given California district and some summary stats about them based on the 1990 census data. Be warned, the data isn&amp;rsquo;t clean, so there are some preprocessing steps required! The columns are as follows, and their names are pretty self-explanatory:&lt;/p>
+&lt;ul>
+&lt;li>longitude&lt;/li>
+&lt;li>latitude&lt;/li>
+&lt;li>housing_median_age&lt;/li>
+&lt;li>total_rooms&lt;/li>
+&lt;li>total_bedrooms&lt;/li>
+&lt;li>population&lt;/li>
+&lt;li>households&lt;/li>
+&lt;li>median_income&lt;/li>
+&lt;li>median_house_ value&lt;/li>
+&lt;li>ocean_proximity&lt;/li>
+&lt;/ul>
+&lt;p>On doing a rudimentary exploration of the dataset, I found the following:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_1.png" alt="">&lt;/p>
+&lt;p>A correlation plot between all the numerical features shows us the following:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_2.png" alt="">&lt;/p>
+&lt;p>According to the graph, most numerical features have very little correlation with median_house_value except median_income, which seems to have a strong positive correlation of around 0.68.&lt;/p>
+&lt;hr>
+&lt;h3 id="data-cleaningfeature-engineering">Data Cleaning/Feature Engineering&lt;/h3>
+&lt;p>Since the total_bedrooms feature had missing values, I had to impute it. For simplicity, I chose the median as the metric to impute the feature.&lt;/p>
+&lt;p>Additionally, two new features were engineered, namely, &amp;ldquo;rooms_per_households&amp;rdquo; and &amp;ldquo;population_per_household.&amp;rdquo;&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_3.png" alt="">&lt;/p>
+&lt;hr>
+&lt;h3 id="training-themodel">Training the Model&lt;/h3>
+&lt;p>Our repository looks like this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_4.png" alt="">&lt;/p>
+&lt;p>The requirements.txt file contains our dependencies. It is crucial to have all the dependencies added to this file as it will be used during our deployment.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_5.png" alt="">&lt;/p>
+&lt;p>The file src/main.py contains our training script. Let us take a look at some of the essential functions in the script.&lt;/p>
+&lt;p>Our training model pipeline is relatively standard. There is just one categorical column (ocean_proximity). For the other numerical columns, I applied a standard scaler. The ColumnTransformer estimator helps to facilitate feature transformations on heterogeneous data.&lt;/p>
+&lt;p>As for the model, I chose the Random Forest algorithm. I created the pipeline using scikit-learn&amp;rsquo;s Pipeline class.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_6.png" alt="">&lt;/p>
+&lt;p>I used joblib to save our model. Since the model file was quite large (&amp;gt;100Mb), I decided to store it in AWS S3. The model&amp;rsquo;s R² score was around 0.81, and the RMSE was around 49k.&lt;/p>
+&lt;hr>
+&lt;h3 id="setting-up-fastapi-server-andfrontend">Setting up FastAPI Server and Frontend&lt;/h3>
+&lt;p>As you may have guessed, app/main.py contains our code for the server. Since the model is stored in AWS, I used boto3 to download a local copy to the server.&lt;/p>
+&lt;p>If your bucket and file are private, you may need to set up authentication to access it on Saturn Cloud. You can do it by following this &lt;a href="https://saturncloud.io/docs/using-saturn-cloud/connect_data/">guide&lt;/a>.&lt;/p>
+&lt;p>I wrote a simple function to load our model from AWS:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_7.png" alt="">&lt;/p>
+&lt;p>The variables BUCKET_NAME and FILE_NAME are self-explanatory. LOCAL_PATH is the path to where the model will be copied locally.&lt;/p>
+&lt;p>I also defined global variables for the app, model, and templates.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_8.png" alt="">&lt;/p>
+&lt;h4 id="homepage">Homepage&lt;/h4>
+&lt;p>Since I&amp;rsquo;m creating an application, it&amp;rsquo;s essential to have a homepage to serve as an interface for the model server.&lt;/p>
+&lt;p>I created a homepage for the app so that users can enter values for each of the features. To render the page, I used Jinja2Templates, which is provided out of the box by FastAPI templates.TemplateResponse renders our landing page titled &amp;ldquo;index.html.&amp;rdquo;&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_9.png" alt="">&lt;/p>
+&lt;p>index.html contains a form that will serve as the frontend for our application. The body of the page looks like this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_10.png" alt="">&lt;/p>
+&lt;p>If you look closely at the form tag, you will see that the action attribute is set to &amp;ldquo;/submitform&amp;rdquo; and the request method is a POST request.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_11.png" alt="">&lt;/p>
+&lt;p>Our FastAPI server needs to have a method that handles the form data. This method needs to be decorated by app.post(&amp;quot;/submitform&amp;quot;) to handle the request appropriately.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_12.png" alt="">&lt;/p>
+&lt;p>You will notice that each of the variables is set as form parameters using Form. This class tells FastAPI that each variable&amp;rsquo;s input is being received from a form.&lt;/p>
+&lt;p>You will also notice that line 26 has a method called predict. This method is actually where the model pipeline is fed the input from the form using the appropriate format. Since the pipeline can only receive input from a data frame, I first convert the data into a data frame. I then created the features as part of the feature engineering process. Finally, I return the model&amp;rsquo;s predictions.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_13.png" alt="">&lt;/p>
+&lt;p>Once I had the price prediction, I used templates.TemplateResponse again to return a page called result.html. Along with &amp;ldquo;request&amp;rdquo;, I also passed &amp;ldquo;price&amp;rdquo; through the TemplateResponse method. Finally, I rendered the price on the body of result.html.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_14.png" alt="">&lt;/p>
+&lt;hr>
+&lt;h3 id="deploying-to-saturncloud">Deploying to Saturn Cloud&lt;/h3>
+&lt;p>Before setting up the deployment, I pushed all of the code to Github. To deploy it, you must have your repository connected to Saturn Cloud. To do so, you can follow this &lt;a href="https://saturncloud.io/docs/using-saturn-cloud/gitrepo/">guide&lt;/a>.&lt;/p>
+&lt;p>Once your repo is connected, head over to resources and select &amp;ldquo;New Deployment&amp;rdquo;.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_15.png" alt="">&lt;/p>
+&lt;p>After this, you will be greeted with a form:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_16.png" alt="">&lt;/p>
+&lt;p>There are a few things to note when filling out the form. For instance, the &amp;ldquo;Command&amp;rdquo; is what the deployment will run to start your application.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_17.png" alt="">&lt;/p>
+&lt;p>Note that Saturn Cloud requires your applications to listen using port 8000.&lt;/p>
+&lt;p>Also, note the Extra Packages header. This is the script that will be used to install additional packages before the command is run. Since Saturn Cloud&amp;rsquo;s default image does not have certain libraries like FastAPI and Uvicorn, pass &amp;ldquo;-r requirements.txt&amp;rdquo; to the text box.&lt;/p>
+&lt;p>This ensures that the script &amp;ldquo;`pip install -r requirements.txt` &amp;ldquo;is run before startup, containing dependencies for the additional packages.&lt;/p>
+&lt;p>Note that you can also write the individual names of each package in this section to install them.&lt;/p>
+&lt;p>Once you hit the Create button, your deployment will be created. Click on it and add your Github repo to the deployment. Ensure that you add the path to the Github resource to your working directory. Once that is done, click the green arrow to start the deployment.&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_18.png" alt="">&lt;/p>
+&lt;p>Once your deployment is ready, click on the public URL. You should see a page like this:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_19.png" alt="">&lt;/p>
+&lt;p>Once you fill out the form, you will see a page with the predicted price:&lt;/p>
+&lt;p>&lt;img src="https://examplesite.org/posts_img/fastapi_saturn/img_20.png" alt="">&lt;/p>
+&lt;p>Note that I used the last example of my test set as input. The actual median house price was $133000, so the model did a reasonably good job! 😀&lt;/p>
+&lt;p>&lt;strong>👉&lt;/strong> &lt;a href="https://github.com/Sayar1106/cali-house-prices-estimator">&lt;strong>Link to the Github directory&lt;/strong>&lt;/a>&lt;/p>
+&lt;hr>
+&lt;h3 id="conclusion">Conclusion&lt;/h3>
+&lt;p>Congratulations! You have successfully learned how to deploy a FastAPI model on &lt;a href="https://saturncloud.io?utm_source=Sayar+Medium&amp;amp;utm_medium=FastAPI+Blog&amp;amp;utm_campaign=FastAPI+Blog">Saturn Cloud&lt;/a>! If you&amp;rsquo;re curious about using their environment, they offer 30 free hours a month for data scientists and teams. I hope you enjoyed reading this article. Until next time! ✋&lt;/p></description></item></channel></rss>
